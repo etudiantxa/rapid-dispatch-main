@@ -1,13 +1,59 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { useToast } from '@/components/ui/use-toast';
 
 /**
  * Page d'inscription - Conversion pixel-perfect de la maquette Stitch
  * Split screen avec formulaire à gauche et visuel carte à droite
  */
 const Register = () => {
-  const [role, setRole] = useState<'vendeur' | 'livreur'>('vendeur');
+  const [role, setRole] = useState<'vendor' | 'courier'>('vendor');
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (password !== confirmPassword) {
+      toast({
+        title: 'Erreur',
+        description: 'Les mots de passe ne correspondent pas.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      const { data } = await axios.post('/api/auth/register', {
+        name,
+        phone,
+        email,
+        password,
+        confirmPassword,
+        role,
+      });
+
+      localStorage.setItem('token', data.token);
+
+      if (role === 'vendor') {
+        navigate('/vendor/tracking');
+      } else {
+        navigate('/courier/home');
+      }
+    } catch (error: any) {
+      toast({
+        title: 'Erreur d\'inscription',
+        description: error.response?.data?.message || 'Une erreur est survenue.',
+        variant: 'destructive',
+      });
+    }
+  };
 
   return (
     <div className="bg-background-light dark:bg-background-dark text-text-main dark:text-white font-display antialiased h-screen overflow-hidden flex flex-col">
@@ -46,9 +92,9 @@ const Register = () => {
                   <input
                     type="radio"
                     name="role"
-                    value="vendeur"
-                    checked={role === 'vendeur'}
-                    onChange={() => setRole('vendeur')}
+                    value="vendor"
+                    checked={role === 'vendor'}
+                    onChange={() => setRole('vendor')}
                     className="peer sr-only"
                   />
                   <div className="flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-semibold text-text-muted dark:text-gray-400 peer-checked:bg-white dark:peer-checked:bg-tiak-primary peer-checked:text-text-main dark:peer-checked:text-white peer-checked:shadow-sm transition-all">
@@ -60,9 +106,9 @@ const Register = () => {
                   <input
                     type="radio"
                     name="role"
-                    value="livreur"
-                    checked={role === 'livreur'}
-                    onChange={() => setRole('livreur')}
+                    value="courier"
+                    checked={role === 'courier'}
+                    onChange={() => setRole('courier')}
                     className="peer sr-only"
                   />
                   <div className="flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-semibold text-text-muted dark:text-gray-400 peer-checked:bg-white dark:peer-checked:bg-tiak-primary peer-checked:text-text-main dark:peer-checked:text-white peer-checked:shadow-sm transition-all">
@@ -74,7 +120,7 @@ const Register = () => {
             </div>
 
             {/* Form */}
-            <form className="flex flex-col gap-5">
+            <form className="flex flex-col gap-5" onSubmit={handleSubmit}>
               {/* Name */}
               <div>
                 <label className="block text-sm font-medium text-text-main dark:text-gray-200 mb-2">
@@ -84,6 +130,8 @@ const Register = () => {
                   <input
                     type="text"
                     placeholder="Ex: Moussa Diop"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
                     className="w-full h-12 px-4 rounded-lg border border-border-light dark:border-border-dark bg-white dark:bg-background-dark focus:ring-2 focus:ring-tiak-primary/20 focus:border-tiak-primary text-base placeholder:text-text-muted/60 dark:text-white transition-all outline-none"
                   />
                   <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-text-muted/50">
@@ -101,6 +149,8 @@ const Register = () => {
                   <input
                     type="email"
                     placeholder="nom@exemple.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     className="w-full h-12 px-4 rounded-lg border border-border-light dark:border-border-dark bg-white dark:bg-background-dark focus:ring-2 focus:ring-tiak-primary/20 focus:border-tiak-primary text-base placeholder:text-text-muted/60 dark:text-white transition-all outline-none"
                   />
                   <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-text-muted/50">
@@ -123,6 +173,8 @@ const Register = () => {
                   <input
                     type="tel"
                     placeholder="77 000 00 00"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
                     className="flex-1 h-12 px-4 border-none bg-transparent focus:ring-0 text-base placeholder:text-text-muted/60 dark:text-white outline-none"
                   />
                 </div>
@@ -139,6 +191,8 @@ const Register = () => {
                     <input
                       type={showPassword ? 'text' : 'password'}
                       placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
                       className="w-full h-12 px-4 rounded-lg border border-border-light dark:border-border-dark bg-white dark:bg-background-dark focus:ring-2 focus:ring-tiak-primary/20 focus:border-tiak-primary text-base placeholder:text-text-muted/60 dark:text-white transition-all outline-none"
                     />
                     <button
@@ -162,6 +216,8 @@ const Register = () => {
                     <input
                       type="password"
                       placeholder="••••••••"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
                       className="w-full h-12 px-4 rounded-lg border border-border-light dark:border-border-dark bg-white dark:bg-background-dark focus:ring-2 focus:ring-tiak-primary/20 focus:border-tiak-primary text-base placeholder:text-text-muted/60 dark:text-white transition-all outline-none"
                     />
                   </div>

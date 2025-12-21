@@ -4,16 +4,20 @@ import jwt from 'jsonwebtoken';
 import User from '../models/User';
 
 export const register = async (req: Request, res: Response) => {
-  const { email, password, role } = req.body;
+  const { name, phone, email, password, confirmPassword, role } = req.body;
 
   try {
+    if (password !== confirmPassword) {
+      return res.status(400).json({ message: "Passwords don't match" });
+    }
+
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: 'User already exists' });
     }
 
     const hashedPassword = await bcrypt.hash(password, 12);
-    const user = new User({ email, password: hashedPassword, role });
+    const user = new User({ name, phone, email, password: hashedPassword, role });
     await user.save();
 
     const token = jwt.sign({ userId: user._id, role: user.role }, process.env.JWT_SECRET!, {
