@@ -1,16 +1,17 @@
 import { useState, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { mockDeliveries } from '@/data/mockDeliveries';
+import axios from 'axios';
+import { useToast } from '@/components/ui/use-toast';
 
 /**
  * Page de validation OTP
  * Le livreur saisit le code OTP donné par le client
- * Code simulé: 1234
  */
 const OTPValidation = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const delivery = location.state?.delivery || mockDeliveries[0];
+  const { toast } = useToast();
+  const delivery = location.state?.delivery;
 
   const [otp, setOtp] = useState(['', '', '', '']);
   const [isValidating, setIsValidating] = useState(false);
@@ -44,7 +45,7 @@ const OTPValidation = () => {
     }
   };
 
-  const handleValidate = () => {
+  const handleValidate = async () => {
     const code = otp.join('');
     if (code.length !== 4) {
       setError('Veuillez entrer le code complet');
@@ -53,20 +54,34 @@ const OTPValidation = () => {
 
     setIsValidating(true);
 
-    // Simuler la validation (code correct: 1234)
-    setTimeout(() => {
-      if (code === '1234') {
-        setIsSuccess(true);
-        setTimeout(() => {
-          navigate('/courier/home');
-        }, 2000);
-      } else {
-        setError('Code incorrect. Veuillez réessayer.');
-        setIsValidating(false);
-        setOtp(['', '', '', '']);
-        inputRefs[0].current?.focus();
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        navigate('/login');
+        return;
       }
-    }, 1500);
+
+      await axios.post(
+        '/api/courier/validate-otp',
+        {
+          deliveryId: delivery._id,
+          otp: code,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      setIsSuccess(true);
+      setTimeout(() => {
+        navigate('/courier/home');
+      }, 2000);
+    } catch (err) {
+      setError('Code incorrect. Veuillez réessayer.');
+      setIsValidating(false);
+      setOtp(['', '', '', '']);
+      inputRefs[0].current?.focus();
+    }
   };
 
   if (isSuccess) {

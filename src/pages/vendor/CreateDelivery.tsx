@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '@/components/Sidebar';
 import { dakarQuartiers } from '@/data/mockDeliveries';
+import axios from 'axios';
+import { useToast } from '@/components/ui/use-toast';
 
 /**
  * Page de création de livraison - Formulaire étape par étape
@@ -9,18 +11,51 @@ import { dakarQuartiers } from '@/data/mockDeliveries';
  */
 const CreateDelivery = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [step, setStep] = useState(1);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [destination, setDestination] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (step < 3) {
       setStep(step + 1);
     } else {
-      setIsSubmitted(true);
-      setTimeout(() => {
-        navigate('/vendor/tracking');
-      }, 2000);
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          navigate('/login');
+          return;
+        }
+
+        // Générer un OTP simple pour la démo
+        const otp = Math.floor(1000 + Math.random() * 9000).toString();
+
+        await axios.post(
+          '/api/deliveries',
+          {
+            origin: 'Dakar, Sénégal', // Origine par défaut
+            destination: destination,
+            otp: otp,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        setIsSubmitted(true);
+        setTimeout(() => {
+          navigate('/vendor/tracking');
+        }, 2000);
+      } catch (error) {
+        toast({
+          title: 'Erreur',
+          description: 'Impossible de créer la livraison. Veuillez réessayer.',
+          variant: 'destructive',
+        });
+      }
     }
   };
 
@@ -151,7 +186,11 @@ const CreateDelivery = () => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">Quartier</label>
-                <select className="w-full h-12 px-4 rounded-lg border border-uber-gray-medium bg-uber-dark-gray focus:ring-2 focus:ring-tiak-green/30 focus:border-tiak-green text-white transition-all outline-none appearance-none">
+                <select
+                  value={destination}
+                  onChange={(e) => setDestination(e.target.value)}
+                  className="w-full h-12 px-4 rounded-lg border border-uber-gray-medium bg-uber-dark-gray focus:ring-2 focus:ring-tiak-green/30 focus:border-tiak-green text-white transition-all outline-none appearance-none"
+                >
                   <option value="">Sélectionner un quartier</option>
                   {dakarQuartiers.map((q) => (
                     <option key={q} value={q}>

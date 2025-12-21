@@ -1,19 +1,65 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
 import StatusBadge from '@/components/StatusBadge';
 import NotificationToast from '@/components/NotificationToast';
-import { mockDeliveries, Delivery } from '@/data/mockDeliveries';
+import axios from 'axios';
+import { useToast } from '@/components/ui/use-toast';
+
+// Interface pour les livraisons venant du backend
+interface ApiDelivery {
+  _id: string;
+  vendor: string;
+  origin: string;
+  destination: string;
+  status: 'pending' | 'in-progress' | 'delivered';
+  otp: string;
+}
+
+// Mapper les statuts du backend à ceux du frontend
+const statusMapping = {
+  pending: 'CREEE',
+  'in-progress': 'EN_COURS',
+  delivered: 'LIVREE',
+};
 
 /**
  * Page de suivi des livraisons en temps réel pour le vendeur
  * Affiche la liste des commandes, la carte statique et les notifications
  */
 const Tracking = () => {
-  const [selectedDelivery, setSelectedDelivery] = useState<Delivery | null>(
-    mockDeliveries.find(d => d.status === 'EN_COURS') || null
-  );
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [deliveries, setDeliveries] = useState<ApiDelivery[]>([]);
+  const [selectedDelivery, setSelectedDelivery] = useState<ApiDelivery | null>(null);
   const [activeFilter, setActiveFilter] = useState<string>('all');
+
+  useEffect(() => {
+    const fetchDeliveries = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          navigate('/login');
+          return;
+        }
+        const { data } = await axios.get('/api/deliveries', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setDeliveries(data);
+        // Sélectionner la première livraison en cours par défaut
+        setSelectedDelivery(data.find(d => d.status === 'in-progress') || data[0] || null);
+      } catch (error) {
+        toast({
+          title: 'Erreur',
+          description: 'Impossible de charger les livraisons.',
+          variant: 'destructive',
+        });
+      }
+    };
+
+    fetchDeliveries();
+  }, [navigate, toast]);
 
   const filters = [
     { id: 'all', label: 'Tout' },
@@ -22,11 +68,11 @@ const Tracking = () => {
     { id: 'terminees', label: 'Terminées' },
   ];
 
-  const filteredDeliveries = mockDeliveries.filter(d => {
+  const filteredDeliveries = deliveries.filter(d => {
     if (activeFilter === 'all') return true;
-    if (activeFilter === 'en_cours') return d.status === 'EN_COURS' || d.status === 'PRISE_EN_CHARGE';
-    if (activeFilter === 'programmees') return d.status === 'CREEE' || d.status === 'DISPONIBLE';
-    if (activeFilter === 'terminees') return d.status === 'LIVREE';
+    if (activeFilter === 'en_cours') return d.status === 'in-progress';
+    if (activeFilter === 'programmees') return d.status === 'pending';
+    if (activeFilter === 'terminees') return d.status === 'delivered';
     return true;
   });
 
@@ -67,55 +113,39 @@ const Tracking = () => {
             <div className="flex-1 overflow-y-auto">
               {filteredDeliveries.map(delivery => (
                 <div
-                  key={delivery.id}
+                  key={delivery._id}
                   onClick={() => setSelectedDelivery(delivery)}
                   className={`group flex flex-col gap-3 p-5 border-b border-uber-gray cursor-pointer transition-all ${
-                    selectedDelivery?.id === delivery.id
+                    selectedDelivery?._id === delivery._id
                       ? 'bg-uber-gray/30 border-l-4 border-l-tiak-green'
                       : 'hover:bg-uber-gray/30'
-                  } ${delivery.status === 'LIVREE' ? 'opacity-60 hover:opacity-100' : ''}`}
+                  } ${delivery.status === 'delivered' ? 'opacity-60 hover:opacity-100' : ''}`}
                 >
                   <div className="flex justify-between items-start">
                     <div>
                       <div className="flex items-center gap-2">
-                        <h4 className="text-white font-bold text-sm">#{delivery.orderId}</h4>
+                        <h4 className="text-white font-bold text-sm">#{delivery._id.substring(0, 6)}</h4>
                         <span className="size-1.5 rounded-full bg-gray-500" />
-                        <span className="text-xs text-gray-400">{delivery.quartier}</span>
+                        <span className="text-xs text-gray-400">{delivery.destination}</span>
                       </div>
                       <p className="text-gray-400 text-xs mt-0.5">
-                        {delivery.clientName} • {delivery.packageDescription}
+                        {delivery.origin} → {delivery.destination}
                       </p>
                     </div>
-                    <StatusBadge status={delivery.status} />
+                    <StatusBadge status={statusMapping[delivery.status]} />
                   </div>
 
                   <div className="flex items-center justify-between mt-2">
                     <div className="flex items-center gap-2">
-                      {delivery.courier ? (
-                        <>
-                          <div
-                            className="size-6 rounded-full bg-gray-700 bg-cover bg-center"
-                            style={{ backgroundImage: delivery.courier.avatar ? `url("${delivery.courier.avatar}")` : undefined }}
-                          >
-                            {!delivery.courier.avatar && (
-                              <span className="flex items-center justify-center h-full text-[10px] text-white">
-                                {delivery.courier.name.charAt(0)}
-                              </span>
-                            )}
-                          </div>
-                          <span className="text-xs text-gray-300 font-medium">{delivery.courier.name}</span>
-                        </>
-                      ) : (
-                        <span className="text-xs text-gray-500 italic">
-                          {delivery.status === 'CREEE' ? 'Recherche livreur...' : 'En attente d\'assignation...'}
-                        </span>
-                      )}
+                      <span className="text-xs text-gray-500 italic">
+                        {delivery.status === 'pending' ? 'Recherche livreur...' : 'Livreur non assigné'}
+                      </span>
                     </div>
                     <div className="flex items-center gap-1 text-xs text-white font-medium">
                       <span className="material-symbols-outlined text-[14px] text-gray-400">
-                        {delivery.status === 'LIVREE' ? 'check_circle' : 'schedule'}
+                        {delivery.status === 'delivered' ? 'check_circle' : 'schedule'}
                       </span>
-                      {delivery.estimatedDelivery}
+                      --:--
                     </div>
                   </div>
                 </div>
@@ -167,42 +197,15 @@ const Tracking = () => {
 
               {/* Panneau inférieur */}
               <div className="flex gap-4 items-end pointer-events-auto w-full max-w-5xl mx-auto">
-                {/* Carte livreur */}
-                {selectedDelivery?.courier && (
-                  <div className="hidden lg:block w-72 bg-uber-black rounded-2xl p-4 shadow-2xl border border-uber-gray">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div
-                        className="size-12 rounded-full bg-cover bg-center border-2 border-tiak-green"
-                        style={{ backgroundImage: `url("${selectedDelivery.courier.avatar}")` }}
-                      />
-                      <div>
-                        <h3 className="text-white font-bold text-sm">{selectedDelivery.courier.name}</h3>
-                        <div className="flex items-center text-xs text-gray-400">
-                          <span className="material-symbols-outlined text-[14px] mr-1">star</span>
-                          <span>{selectedDelivery.courier.rating} • {selectedDelivery.courier.totalDeliveries.toLocaleString()} courses</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <button className="flex-1 h-9 rounded-lg bg-uber-gray hover:bg-[#333] text-white flex items-center justify-center transition-colors">
-                        <span className="material-symbols-outlined text-[18px]">chat</span>
-                      </button>
-                      <button className="flex-1 h-9 rounded-lg bg-white hover:bg-gray-200 text-black flex items-center justify-center transition-colors">
-                        <span className="material-symbols-outlined text-[18px]">call</span>
-                      </button>
-                    </div>
-                  </div>
-                )}
-
                 {/* Timeline de progression */}
                 <div className="flex-1 bg-uber-black rounded-2xl p-6 shadow-2xl border border-uber-gray">
                   <div className="flex justify-between items-center mb-6">
                     <div>
                       <h2 className="text-xl font-bold text-white mb-1">
-                        En route vers {selectedDelivery?.quartier || 'Plateau'}
+                        En route vers {selectedDelivery?.destination || 'Plateau'}
                       </h2>
                       <p className="text-gray-400 text-sm">
-                        Arrivée estimée: <span className="text-tiak-green font-bold">{selectedDelivery?.estimatedDelivery || '14:45'}</span>
+                        Arrivée estimée: <span className="text-tiak-green font-bold">--:--</span>
                       </p>
                     </div>
                     <button className="text-sm text-gray-400 hover:text-white underline">Détails</button>

@@ -1,22 +1,37 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { useToast } from "@/components/ui/use-toast"
 
 /**
  * Page de connexion - Style Uber-inspired
  * Split screen avec visuel à gauche et formulaire à droite
  */
 const Login = () => {
-  const [role, setRole] = useState<'vendeur' | 'livreur'>('vendeur');
+  const [role, setRole] = useState<'vendor' | 'courier'>('vendor');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
+  const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Navigation simulée selon le rôle
-    if (role === 'vendeur') {
-      navigate('/vendor/tracking');
-    } else {
-      navigate('/courier/home');
+    try {
+      const { data } = await axios.post('/api/auth/login', { email, password, role });
+      localStorage.setItem('token', data.token);
+
+      if (role === 'vendor') {
+        navigate('/vendor/tracking');
+      } else {
+        navigate('/courier/home');
+      }
+    } catch (error) {
+      toast({
+        title: "Erreur de connexion",
+        description: "Veuillez vérifier vos identifiants.",
+        variant: "destructive",
+      })
     }
   };
 
@@ -114,9 +129,9 @@ const Login = () => {
                 <input
                   type="radio"
                   name="role"
-                  value="vendeur"
-                  checked={role === 'vendeur'}
-                  onChange={() => setRole('vendeur')}
+                  value="vendor"
+                  checked={role === 'vendor'}
+                  onChange={() => setRole('vendor')}
                   className="peer sr-only"
                 />
                 <div className="flex items-center justify-center gap-2 py-2.5 rounded-md text-sm font-medium text-gray-500 transition-all peer-checked:bg-white peer-checked:text-black peer-checked:shadow-sm dark:peer-checked:bg-gray-800 dark:peer-checked:text-white">
@@ -127,9 +142,9 @@ const Login = () => {
                 <input
                   type="radio"
                   name="role"
-                  value="livreur"
-                  checked={role === 'livreur'}
-                  onChange={() => setRole('livreur')}
+                  value="courier"
+                  checked={role === 'courier'}
+                  onChange={() => setRole('courier')}
                   className="peer sr-only"
                 />
                 <div className="flex items-center justify-center gap-2 py-2.5 rounded-md text-sm font-medium text-gray-500 transition-all peer-checked:bg-white peer-checked:text-black peer-checked:shadow-sm dark:peer-checked:bg-gray-800 dark:peer-checked:text-white">
@@ -146,6 +161,8 @@ const Login = () => {
                   <input
                     type="email"
                     placeholder=" "
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     className="peer block w-full rounded-lg border-2 border-transparent bg-gray-100 px-4 pb-2.5 pt-5 text-sm text-black focus:border-black focus:ring-0 focus:bg-white transition-all dark:bg-gray-800 dark:text-white dark:focus:border-white"
                   />
                   <label className="absolute left-4 top-4 z-10 origin-[0] -translate-y-2.5 scale-75 transform text-xs text-gray-500 duration-150 peer-placeholder-shown:translate-y-0 peer-placeholder-shown:scale-100 peer-focus:-translate-y-2.5 peer-focus:scale-75">
@@ -160,6 +177,8 @@ const Login = () => {
                   <input
                     type={showPassword ? 'text' : 'password'}
                     placeholder=" "
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                     className="peer block w-full rounded-lg border-2 border-transparent bg-gray-100 px-4 pb-2.5 pt-5 text-sm text-black focus:border-black focus:ring-0 focus:bg-white transition-all dark:bg-gray-800 dark:text-white dark:focus:border-white"
                   />
                   <label className="absolute left-4 top-4 z-10 origin-[0] -translate-y-2.5 scale-75 transform text-xs text-gray-500 duration-150 peer-placeholder-shown:translate-y-0 peer-placeholder-shown:scale-100 peer-focus:-translate-y-2.5 peer-focus:scale-75">
