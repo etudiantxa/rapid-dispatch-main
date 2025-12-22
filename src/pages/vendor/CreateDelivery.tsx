@@ -296,15 +296,15 @@ const CreateDelivery = () => {
               <div className="bg-uber-dark-gray rounded-xl p-5 space-y-4">
                 <div className="flex justify-between items-center pb-3 border-b border-uber-gray">
                   <span className="text-gray-400">Client</span>
-                  <span className="font-medium">Moussa Diop</span>
+                  <span className="font-medium">{formData.clientName}</span>
                 </div>
                 <div className="flex justify-between items-center pb-3 border-b border-uber-gray">
                   <span className="text-gray-400">Quartier</span>
-                  <span className="font-medium">Plateau</span>
+                  <span className="font-medium">{formData.destination}</span>
                 </div>
                 <div className="flex justify-between items-center pb-3 border-b border-uber-gray">
                   <span className="text-gray-400">Colis</span>
-                  <span className="font-medium">2 articles</span>
+                  <span className="font-medium">{formData.itemCount} article(s)</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-400">Frais de livraison</span>
