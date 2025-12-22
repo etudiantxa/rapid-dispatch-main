@@ -14,7 +14,23 @@ const CreateDelivery = () => {
   const { toast } = useToast();
   const [step, setStep] = useState(1);
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const [destination, setDestination] = useState('');
+
+  // State for all form fields
+  const [formData, setFormData] = useState({
+    clientName: '',
+    clientPhone: '',
+    deliveryAddress: '',
+    destination: '', // Quartier
+    packageDescription: '',
+    itemCount: 1,
+    estimatedValue: '',
+    specialInstructions: '',
+  });
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,8 +50,8 @@ const CreateDelivery = () => {
         await axios.post(
           '/api/deliveries',
           {
+            ...formData,
             origin: 'Dakar, Sénégal', // Origine par défaut
-            destination: destination,
             otp: otp,
           },
           {
@@ -161,6 +177,9 @@ const CreateDelivery = () => {
                   <label className="block text-sm font-medium text-gray-300 mb-2">Nom du client</label>
                   <input
                     type="text"
+                    name="clientName"
+                    value={formData.clientName}
+                    onChange={handleChange}
                     placeholder="Ex: Moussa Diop"
                     className="w-full h-12 px-4 rounded-lg border border-uber-gray-medium bg-uber-dark-gray focus:ring-2 focus:ring-tiak-green/30 focus:border-tiak-green text-white placeholder:text-gray-500 transition-all outline-none"
                   />
@@ -169,6 +188,9 @@ const CreateDelivery = () => {
                   <label className="block text-sm font-medium text-gray-300 mb-2">Téléphone</label>
                   <input
                     type="tel"
+                    name="clientPhone"
+                    value={formData.clientPhone}
+                    onChange={handleChange}
                     placeholder="+221 77 000 00 00"
                     className="w-full h-12 px-4 rounded-lg border border-uber-gray-medium bg-uber-dark-gray focus:ring-2 focus:ring-tiak-green/30 focus:border-tiak-green text-white placeholder:text-gray-500 transition-all outline-none"
                   />
@@ -179,6 +201,9 @@ const CreateDelivery = () => {
                 <label className="block text-sm font-medium text-gray-300 mb-2">Adresse de livraison</label>
                 <input
                   type="text"
+                  name="deliveryAddress"
+                  value={formData.deliveryAddress}
+                  onChange={handleChange}
                   placeholder="Ex: Rue 10, Plateau"
                   className="w-full h-12 px-4 rounded-lg border border-uber-gray-medium bg-uber-dark-gray focus:ring-2 focus:ring-tiak-green/30 focus:border-tiak-green text-white placeholder:text-gray-500 transition-all outline-none"
                 />
@@ -187,8 +212,9 @@ const CreateDelivery = () => {
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">Quartier</label>
                 <select
-                  value={destination}
-                  onChange={(e) => setDestination(e.target.value)}
+                  name="destination"
+                  value={formData.destination}
+                  onChange={handleChange}
                   className="w-full h-12 px-4 rounded-lg border border-uber-gray-medium bg-uber-dark-gray focus:ring-2 focus:ring-tiak-green/30 focus:border-tiak-green text-white transition-all outline-none appearance-none"
                 >
                   <option value="">Sélectionner un quartier</option>
@@ -212,6 +238,9 @@ const CreateDelivery = () => {
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">Description du colis</label>
                 <textarea
+                  name="packageDescription"
+                  value={formData.packageDescription}
+                  onChange={handleChange}
                   rows={3}
                   placeholder="Décrivez le contenu du colis..."
                   className="w-full px-4 py-3 rounded-lg border border-uber-gray-medium bg-uber-dark-gray focus:ring-2 focus:ring-tiak-green/30 focus:border-tiak-green text-white placeholder:text-gray-500 transition-all outline-none resize-none"
@@ -223,8 +252,10 @@ const CreateDelivery = () => {
                   <label className="block text-sm font-medium text-gray-300 mb-2">Nombre d'articles</label>
                   <input
                     type="number"
+                    name="itemCount"
+                    value={formData.itemCount}
+                    onChange={handleChange}
                     min="1"
-                    defaultValue="1"
                     className="w-full h-12 px-4 rounded-lg border border-uber-gray-medium bg-uber-dark-gray focus:ring-2 focus:ring-tiak-green/30 focus:border-tiak-green text-white transition-all outline-none"
                   />
                 </div>
@@ -232,6 +263,9 @@ const CreateDelivery = () => {
                   <label className="block text-sm font-medium text-gray-300 mb-2">Valeur estimée (FCFA)</label>
                   <input
                     type="number"
+                    name="estimatedValue"
+                    value={formData.estimatedValue}
+                    onChange={handleChange}
                     placeholder="Ex: 15000"
                     className="w-full h-12 px-4 rounded-lg border border-uber-gray-medium bg-uber-dark-gray focus:ring-2 focus:ring-tiak-green/30 focus:border-tiak-green text-white placeholder:text-gray-500 transition-all outline-none"
                   />
@@ -242,6 +276,9 @@ const CreateDelivery = () => {
                 <label className="block text-sm font-medium text-gray-300 mb-2">Instructions spéciales</label>
                 <input
                   type="text"
+                  name="specialInstructions"
+                  value={formData.specialInstructions}
+                  onChange={handleChange}
                   placeholder="Ex: Fragile, appeler avant livraison..."
                   className="w-full h-12 px-4 rounded-lg border border-uber-gray-medium bg-uber-dark-gray focus:ring-2 focus:ring-tiak-green/30 focus:border-tiak-green text-white placeholder:text-gray-500 transition-all outline-none"
                 />

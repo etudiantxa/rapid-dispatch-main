@@ -3,7 +3,18 @@ import Delivery from '../models/Delivery';
 import { IUser } from '../models/User';
 
 export const createDelivery = async (req: Request, res: Response) => {
-  const { origin, destination, otp } = req.body;
+  const {
+    origin,
+    destination,
+    otp,
+    clientName,
+    clientPhone,
+    deliveryAddress,
+    packageDescription,
+    itemCount,
+    estimatedValue,
+    specialInstructions,
+  } = req.body;
   const vendor = (req.user as any).userId;
 
   try {
@@ -12,6 +23,13 @@ export const createDelivery = async (req: Request, res: Response) => {
       origin,
       destination,
       otp,
+      clientName,
+      clientPhone,
+      deliveryAddress,
+      packageDescription,
+      itemCount,
+      estimatedValue,
+      specialInstructions,
     });
 
     await delivery.save();

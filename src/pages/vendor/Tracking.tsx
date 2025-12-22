@@ -12,9 +12,16 @@ interface ApiDelivery {
   _id: string;
   vendor: string;
   origin: string;
-  destination: string;
+  destination: string; // Quartier
   status: 'pending' | 'in-progress' | 'delivered';
   otp: string;
+  clientName: string;
+  clientPhone: string;
+  deliveryAddress: string;
+  packageDescription?: string;
+  itemCount: number;
+  estimatedValue?: number;
+  specialInstructions?: string;
 }
 
 // Mapper les statuts du backend à ceux du frontend
@@ -129,7 +136,7 @@ const Tracking = () => {
                         <span className="text-xs text-gray-400">{delivery.destination}</span>
                       </div>
                       <p className="text-gray-400 text-xs mt-0.5">
-                        {delivery.origin} → {delivery.destination}
+                        {delivery.clientName} • {delivery.packageDescription || 'Aucune description'}
                       </p>
                     </div>
                     <StatusBadge status={statusMapping[delivery.status]} />
@@ -202,7 +209,7 @@ const Tracking = () => {
                   <div className="flex justify-between items-center mb-6">
                     <div>
                       <h2 className="text-xl font-bold text-white mb-1">
-                        En route vers {selectedDelivery?.destination || 'Plateau'}
+                        En route vers {selectedDelivery?.deliveryAddress || selectedDelivery?.destination || 'Plateau'}
                       </h2>
                       <p className="text-gray-400 text-sm">
                         Arrivée estimée: <span className="text-tiak-green font-bold">--:--</span>
