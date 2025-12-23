@@ -4,6 +4,7 @@ import Sidebar from '@/components/Sidebar';
 import { dakarQuartiers } from '@/data/mockDeliveries';
 import axios from 'axios';
 import { useToast } from '@/components/ui/use-toast';
+import { useNotifications } from '@/context/NotificationContext';
 
 /**
  * Page de création de livraison - Formulaire étape par étape
@@ -12,6 +13,7 @@ import { useToast } from '@/components/ui/use-toast';
 const CreateDelivery = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { addNotification } = useNotifications();
   const [step, setStep] = useState(1);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
@@ -47,7 +49,7 @@ const CreateDelivery = () => {
         // Générer un OTP simple pour la démo
         const otp = Math.floor(1000 + Math.random() * 9000).toString();
 
-        await axios.post(
+        const { data: newDelivery } = await axios.post(
           '/api/deliveries',
           {
             ...formData,
@@ -60,6 +62,9 @@ const CreateDelivery = () => {
             },
           }
         );
+
+        // Ajouter une notification avec l'ID de la commande
+        addNotification(`Livraison #${newDelivery._id.substring(0, 6)} créée pour ${newDelivery.clientName}.`);
 
         setIsSubmitted(true);
         setTimeout(() => {
@@ -86,7 +91,9 @@ const CreateDelivery = () => {
                 <span className="material-symbols-outlined text-tiak-green text-4xl">check_circle</span>
               </div>
               <h1 className="text-3xl font-bold mb-3">Livraison créée !</h1>
-              <p className="text-gray-400 mb-6">Votre commande a été enregistrée avec succès.</p>
+              <p className="text-gray-400 mb-6">
+                La commande pour <strong className="text-white">{formData.clientName}</strong> a été enregistrée avec succès.
+              </p>
               <p className="text-sm text-gray-500">Redirection vers le suivi...</p>
             </div>
           </main>
