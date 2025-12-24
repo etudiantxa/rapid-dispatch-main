@@ -5,8 +5,14 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+// Vérifications des variables d'environnement
 if (!process.env.JWT_SECRET) {
   console.error('FATAL ERROR: JWT_SECRET is not defined.');
+  process.exit(1);
+}
+
+if (!process.env.MONGODB_URI) {
+  console.error('FATAL ERROR: MONGODB_URI is not defined.');
   process.exit(1);
 }
 
@@ -28,13 +34,26 @@ app.use('/api/auth', authRoutes);
 app.use('/api/deliveries', deliveryRoutes);
 app.use('/api/courier', courierRoutes);
 
-mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/rapid-dispatch')
+// Options de connexion MongoDB
+const mongooseOptions = {
+  serverSelectionTimeoutMS: 30000, // 30s timeout
+  retryWrites: true,
+};
+
+// Connexion à MongoDB
+mongoose.connect(process.env.MONGODB_URI, mongooseOptions)
   .then(() => {
-    console.log('Connected to MongoDB');
+    console.log('✅ Connecté à MongoDB');
+    // Démarrer le serveur seulement après connexion réussie
     app.listen(port, () => {
-      console.log(`Server is running on port ${port}`);
+      console.log(`🚀 Server is running on port ${port}`);
     });
   })
-  .catch((error) => {
-    console.error('Error connecting to MongoDB:', error);
+  .catch(err => {
+    console.error('❌ Erreur de connexion MongoDB:', err.message);
+    process.exit(1);
   });
+
+mongoose.connection.on('error', (err) => {
+  console.error('MongoDB connection error:', err);
+});
