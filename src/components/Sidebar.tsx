@@ -1,4 +1,5 @@
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
+import { useUser } from '../context/UserContext';
 
 interface SidebarProps {
   userType: 'vendor' | 'courier';
@@ -9,7 +10,7 @@ interface SidebarProps {
  * Adapté selon le type d'utilisateur (vendeur ou livreur)
  */
 const Sidebar = ({ userType }: SidebarProps) => {
-  const navigate = useNavigate();
+  const { user, logout, loading } = useUser();
 
   const vendorLinks: Array<{ to: string; icon: string; label: string; filled?: boolean }> = [
     { to: '/vendor/dashboard', icon: 'dashboard', label: 'Tableau de bord' },
@@ -26,17 +27,12 @@ const Sidebar = ({ userType }: SidebarProps) => {
 
   const links = userType === 'vendor' ? vendorLinks : courierLinks;
 
-  const handleLogout = () => {
-    // Rediriger vers la page de connexion
-    navigate('/login');
-  };
-
   return (
     <aside className="w-20 lg:w-64 flex-shrink-0 flex flex-col border-r border-uber-gray bg-uber-black z-20 transition-all duration-300">
       {/* Logo */}
       <div className="h-16 flex items-center justify-center lg:justify-start lg:px-6 border-b border-uber-gray">
         <div className="text-white font-bold text-xl tracking-tight">
-          SUNU<span className="text-tiak-green">COLIS</span>
+          TIAK<span className="text-tiak-green">TIAK</span>
         </div>
       </div>
 
@@ -48,8 +44,8 @@ const Sidebar = ({ userType }: SidebarProps) => {
             to={link.to}
             className={({ isActive }) =>
               `flex items-center gap-3 px-3 py-3 rounded-lg transition-colors ${
-                isActive 
-                  ? 'bg-uber-gray text-white' 
+                isActive
+                  ? 'bg-uber-gray text-white'
                   : 'text-gray-400 hover:bg-uber-gray hover:text-white'
               }`
             }
@@ -65,21 +61,30 @@ const Sidebar = ({ userType }: SidebarProps) => {
       {/* User Profile + Logout */}
       <div className="p-4 border-t border-uber-gray">
         <div className="flex items-center gap-3 mb-3">
-          <div 
-            className="size-10 rounded-full bg-cover bg-center border border-uber-gray"
-            style={{ 
-              backgroundImage: `url("https://lh3.googleusercontent.com/aida-public/AB6AXuCFl7h1nqVoN0C9Z9iHE0gjhpw-ACLUuhB3YGyHq1vadFAvHY6HuBf7sS3lP54PBxmSfVkBMgrxBfCs20oWTmpEIrGchs13aaYjrhi4yfLF5ja9YVGUSJ-kZLBqAUqlGHELUI01xza15U92igw02Yg1VpivWA3ivMcLXibXnBGrVRacPfKtSN6BXozZGEkUj3Q5vjApJkQCvtkSIoOkMP7TXnEm8G6z6Jga8q6_F50fSZt0tQhcj4KhxcjRv5TpqptI6J9lSowgnSNt")` 
-            }}
-          />
+          <div className="size-10 rounded-full bg-uber-gray flex items-center justify-center">
+            {loading ? (
+              <div className="size-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+            ) : (
+              <span className="text-white font-bold text-lg">
+                {user?.name?.charAt(0).toUpperCase()}
+              </span>
+            )}
+          </div>
           <div className="hidden lg:flex flex-col">
-            <p className="text-sm font-semibold text-white">Moussa Diop</p>
-            <p className="text-xs text-gray-500">{userType === 'vendor' ? 'Vendeur' : 'Livreur'}</p>
+            {loading ? (
+              <p className="text-sm text-gray-400">Chargement...</p>
+            ) : (
+              <>
+                <p className="text-sm font-semibold text-white">{user?.name}</p>
+                <p className="text-xs text-gray-500 capitalize">{user?.role}</p>
+              </>
+            )}
           </div>
         </div>
-        
+
         {/* Bouton Déconnexion */}
         <button
-          onClick={handleLogout}
+          onClick={logout}
           className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors"
         >
           <span className="material-symbols-outlined text-lg">logout</span>
