@@ -12,6 +12,7 @@ interface User {
 interface UserContextType {
   user: User | null;
   loading: boolean;
+  login: (token: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -22,25 +23,35 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      const token = localStorage.getItem('token');
-      if (token) {
-        try {
-          const { data: userData } = await axios.get('/api/auth/me', {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          setUser(userData);
-        } catch (error) {
-          console.error("Failed to fetch user, token might be invalid.", error);
-          localStorage.removeItem('token');
-        }
+  const fetchUser = async () => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        setLoading(true);
+        const { data: userData } = await axios.get('/api/auth/me', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setUser(userData);
+      } catch (error) {
+        console.error("Failed to fetch user, token might be invalid.", error);
+        localStorage.removeItem('token');
+        setUser(null);
+      } finally {
+        setLoading(false);
       }
+    } else {
       setLoading(false);
-    };
+    }
+  };
 
+  useEffect(() => {
     fetchUser();
   }, []);
+
+  const login = async (token: string) => {
+    localStorage.setItem('token', token);
+    await fetchUser(); // Re-fetch user data after login
+  };
 
   const logout = () => {
     localStorage.removeItem('token');
@@ -49,7 +60,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <UserContext.Provider value={{ user, loading, logout }}>
+    <UserContext.Provider value={{ user, loading, login, logout }}>
       {children}
     </UserContext.Provider>
   );
