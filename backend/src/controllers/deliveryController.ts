@@ -56,7 +56,8 @@ export const getDeliveries = async (req: Request, res: Response) => {
   const vendor = req.user?.userId;
 
   try {
-    const deliveries = await Delivery.find({ vendor });
+    const deliveries = await Delivery.find({ 
+      vendor: vendor as any });
     res.status(200).json(deliveries);
   } catch (error) {
     console.error(error);
