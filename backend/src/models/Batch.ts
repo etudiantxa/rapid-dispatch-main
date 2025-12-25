@@ -1,17 +1,15 @@
-import mongoose, { Schema, Document } from 'mongoose';
-import { IDelivery } from './Delivery';
-import { IUser } from './User';
+import { Schema, model, Document } from 'mongoose';
 
 export interface IBatch extends Document {
-  courier: IUser['_id'];
-  deliveries: IDelivery['_id'][];
-  status: 'assigned' | 'in-progress' | 'completed';
+  courier: Schema.Types.ObjectId;
+  deliveries: Array<Schema.Types.ObjectId>;
+  status: 'assigned' | 'completed';
 }
 
-const BatchSchema: Schema = new Schema({
+const batchSchema = new Schema<IBatch>({
   courier: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   deliveries: [{ type: Schema.Types.ObjectId, ref: 'Delivery', required: true }],
-  status: { type: String, required: true, enum: ['assigned', 'in-progress', 'completed'], default: 'assigned' },
-});
+  status: { type: String, enum: ['assigned', 'completed'], default: 'assigned' },
+}, { timestamps: true });
 
-export default mongoose.model<IBatch>('Batch', BatchSchema);
+export default model<IBatch>('Batch', batchSchema);

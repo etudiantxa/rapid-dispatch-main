@@ -1,34 +1,35 @@
-import mongoose, { Schema, Document } from 'mongoose';
-import { IUser } from './User';
+import { Schema, model, Document } from 'mongoose';
 
 export interface IDelivery extends Document {
-  vendor: IUser['_id'];
+  vendor: Schema.Types.ObjectId;
+  courier?: Schema.Types.ObjectId;
   origin: string;
-  destination: string; // Quartier
-  status: 'pending' | 'in-progress' | 'delivered';
+  destination: string;
+  status: 'pending' | 'in_progress' | 'delivered';
   otp: string;
   clientName: string;
   clientPhone: string;
   deliveryAddress: string;
-  packageDescription?: string;
+  packageDescription: string;
   itemCount: number;
-  estimatedValue?: number;
-  specialInstructions?: string;
+  estimatedValue: string;
+  specialInstructions: string;
 }
 
-const DeliverySchema: Schema = new Schema({
+const deliverySchema = new Schema<IDelivery>({
   vendor: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+  courier: { type: Schema.Types.ObjectId, ref: 'User' },
   origin: { type: String, required: true },
-  destination: { type: String, required: true }, // Quartier
-  status: { type: String, required: true, enum: ['pending', 'in-progress', 'delivered'], default: 'pending' },
+  destination: { type: String, required: true },
+  status: { type: String, enum: ['pending', 'in_progress', 'delivered'], default: 'pending' },
   otp: { type: String, required: true },
   clientName: { type: String, required: true },
   clientPhone: { type: String, required: true },
   deliveryAddress: { type: String, required: true },
   packageDescription: { type: String },
-  itemCount: { type: Number, required: true, default: 1 },
-  estimatedValue: { type: Number },
+  itemCount: { type: Number, default: 1 },
+  estimatedValue: { type: String },
   specialInstructions: { type: String },
-});
+}, { timestamps: true });
 
-export default mongoose.model<IDelivery>('Delivery', DeliverySchema);
+export default model<IDelivery>('Delivery', deliverySchema);

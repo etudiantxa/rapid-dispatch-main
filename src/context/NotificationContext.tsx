@@ -1,6 +1,5 @@
 import { createContext, useContext, useState, ReactNode, useCallback } from 'react';
 
-// Définir une interface pour la structure d'une notification
 export interface Notification {
   id: number;
   message: string;
@@ -8,7 +7,6 @@ export interface Notification {
   read: boolean;
 }
 
-// Définir le type pour la valeur du contexte
 interface NotificationContextType {
   notifications: Notification[];
   unreadCount: number;
@@ -17,17 +15,14 @@ interface NotificationContextType {
   markAllAsRead: () => void;
 }
 
-// Créer le contexte avec une valeur par défaut `undefined`
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
-// Créer le fournisseur de contexte
 export const NotificationProvider = ({ children }: { children: ReactNode }) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
-  // Ajoute une nouvelle notification
   const addNotification = useCallback((message: string) => {
     const newNotification: Notification = {
-      id: Date.now(), // Utiliser timestamp comme ID simple
+      id: Date.now(),
       message,
       timestamp: new Date(),
       read: false,
@@ -35,19 +30,16 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
     setNotifications(prev => [newNotification, ...prev]);
   }, []);
 
-  // Marque une notification spécifique comme lue
   const markAsRead = useCallback((id: number) => {
     setNotifications(prev =>
       prev.map(n => (n.id === id ? { ...n, read: true } : n))
     );
   }, []);
 
-  // Marque toutes les notifications comme lues
   const markAllAsRead = useCallback(() => {
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
   }, []);
 
-  // Calcule le nombre de notifications non lues
   const unreadCount = notifications.filter(n => !n.read).length;
 
   return (
@@ -65,7 +57,6 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-// Créer un hook personnalisé pour utiliser le contexte
 export const useNotifications = () => {
   const context = useContext(NotificationContext);
   if (context === undefined) {

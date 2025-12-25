@@ -5,10 +5,6 @@ interface SidebarProps {
   userType: 'vendor' | 'courier';
 }
 
-/**
- * Menu latéral pour la navigation
- * Adapté selon le type d'utilisateur (vendeur ou livreur)
- */
 const Sidebar = ({ userType }: SidebarProps) => {
   const { user, logout, loading } = useUser();
 
@@ -29,14 +25,12 @@ const Sidebar = ({ userType }: SidebarProps) => {
 
   return (
     <aside className="w-20 lg:w-64 flex-shrink-0 flex flex-col border-r border-uber-gray bg-uber-black z-20 transition-all duration-300">
-      {/* Logo */}
       <div className="h-16 flex items-center justify-center lg:justify-start lg:px-6 border-b border-uber-gray">
         <div className="text-white font-bold text-xl tracking-tight">
           TIAK<span className="text-tiak-green">TIAK</span>
         </div>
       </div>
 
-      {/* Navigation */}
       <nav className="flex-1 flex flex-col gap-1 p-3 overflow-y-auto">
         {links.map((link) => (
           <NavLink
@@ -58,7 +52,6 @@ const Sidebar = ({ userType }: SidebarProps) => {
         ))}
       </nav>
 
-      {/* User Profile + Logout */}
       <div className="p-4 border-t border-uber-gray">
         <div className="flex items-center gap-3 mb-3">
           <div className="size-10 rounded-full bg-uber-gray flex items-center justify-center">
@@ -82,7 +75,6 @@ const Sidebar = ({ userType }: SidebarProps) => {
           </div>
         </div>
 
-        {/* Bouton Déconnexion */}
         <button
           onClick={logout}
           className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors"

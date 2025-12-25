@@ -7,22 +7,16 @@ interface HeaderProps {
   showNewDeliveryButton?: boolean;
 }
 
-/**
- * En-tête de l'application
- * Contient la recherche, le bouton de création de livraison, et les informations utilisateur.
- */
 const Header = ({ showSearch = true, showNewDeliveryButton = true }: HeaderProps) => {
   const { user, logout, loading } = useUser();
   const { unreadCount } = useNotifications();
 
   return (
     <header className="h-16 flex items-center justify-between px-6 border-b border-uber-gray bg-uber-black text-white">
-      {/* Logo ou titre */}
       <div className="text-lg font-bold">
         <Link to={user?.role === 'vendor' ? '/vendor' : '/courier'}>Tiak-Tiak</Link>
       </div>
 
-      {/* Barre de recherche (si applicable) */}
       {showSearch && (
         <div className="flex-1 max-w-md mx-4">
           <div className="flex h-10 w-full items-center rounded-lg bg-uber-gray focus-within:bg-[#333] transition-colors">
@@ -38,9 +32,7 @@ const Header = ({ showSearch = true, showNewDeliveryButton = true }: HeaderProps
         </div>
       )}
 
-      {/* Actions et informations utilisateur */}
       <div className="flex items-center gap-4">
-        {/* Notifications */}
         <button className="relative p-2 rounded-full hover:bg-uber-gray transition-colors">
           <span className="material-symbols-outlined">notifications</span>
           {unreadCount > 0 && (
@@ -50,7 +42,6 @@ const Header = ({ showSearch = true, showNewDeliveryButton = true }: HeaderProps
           )}
         </button>
 
-        {/* Bouton nouvelle livraison (pour les vendeurs) */}
         {user?.role === 'vendor' && showNewDeliveryButton && (
           <Link
             to="/vendor/create-delivery"
@@ -61,7 +52,6 @@ const Header = ({ showSearch = true, showNewDeliveryButton = true }: HeaderProps
           </Link>
         )}
 
-        {/* Informations utilisateur */}
         <div className="flex items-center gap-3">
           {loading ? (
             <div className="text-sm text-gray-400">Chargement...</div>

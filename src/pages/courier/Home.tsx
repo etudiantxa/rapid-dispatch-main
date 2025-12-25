@@ -1,55 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import { useToast } from '@/components/ui/use-toast';
-
-// Interfaces pour les données du backend
-interface ApiDelivery {
-  _id: string;
-  destination: string;
-}
-
-interface ApiBatch {
-  _id: string;
-  deliveries: ApiDelivery[];
-  status: string;
-}
+import { getBatchesByQuartier, Batch } from '@/data/mockDeliveries';
 
 /**
  * Page d'accueil livreur (Mobile-first)
  * Affiche les lots disponibles groupés par quartier
  */
 const CourierHome = () => {
-  const [batches, setBatches] = useState<ApiBatch[]>([]);
+  const [batches] = useState<Batch[]>(getBatchesByQuartier());
   const navigate = useNavigate();
-  const { toast } = useToast();
-
-  useEffect(() => {
-    const fetchBatches = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-          navigate('/login');
-          return;
-        }
-        const { data } = await axios.get('/api/courier/batches', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setBatches(data);
-      } catch (error) {
-        toast({
-          title: 'Erreur',
-          description: 'Impossible de charger les lots de livraison.',
-          variant: 'destructive',
-        });
-      }
-    };
-
-    fetchBatches();
-  }, [navigate, toast]);
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
     navigate('/login');
   };
 
@@ -126,30 +87,30 @@ const CourierHome = () => {
         <div className="space-y-3">
           {batches.map((batch) => (
             <Link
-              key={batch._id}
-              to={`/courier/batch/${batch._id}`}
+              key={batch.id}
+              to={`/courier/batch/${batch.id}`}
               className="block bg-uber-gray rounded-xl p-4 hover:bg-uber-gray-medium transition-colors"
             >
               <div className="flex items-start justify-between mb-3">
                 <div>
                   <h3 className="font-bold text-white flex items-center gap-2">
                     <span className="material-symbols-outlined text-lg">location_on</span>
-                    {batch.deliveries[0]?.destination || 'Destination inconnue'}
+                    {batch.quartier}
                   </h3>
                   <p className="text-xs text-gray-400 mt-1">
-                    {batch.deliveries.length} livraison{batch.deliveries.length > 1 ? 's' : ''}
+                    {batch.totalDeliveries} livraison{batch.totalDeliveries > 1 ? 's' : ''} • {batch.distance}
                   </p>
                 </div>
                 <span className="bg-tiak-green/10 text-tiak-green px-3 py-1 rounded-full text-xs font-bold">
-                  Nouveau
+                  {batch.estimatedTime}
                 </span>
               </div>
 
               {/* Mini delivery list */}
               <div className="flex flex-wrap gap-2">
                 {batch.deliveries.slice(0, 3).map((d) => (
-                  <span key={d._id} className="bg-uber-dark-gray px-2 py-1 rounded text-xs text-gray-300">
-                    #{d._id.substring(0, 6)}
+                  <span key={d.id} className="bg-uber-dark-gray px-2 py-1 rounded text-xs text-gray-300">
+                    #{d.orderId.split('-')[1]}
                   </span>
                 ))}
                 {batch.deliveries.length > 3 && (
@@ -161,7 +122,7 @@ const CourierHome = () => {
 
               <div className="flex items-center justify-between mt-4 pt-3 border-t border-uber-gray-medium">
                 <span className="text-sm text-gray-400">Gains estimés</span>
-                <span className="font-bold text-tiak-green">{batch.deliveries.length * 500} FCFA</span>
+                <span className="font-bold text-tiak-green">{batch.totalDeliveries * 500} FCFA</span>
               </div>
             </Link>
           ))}
