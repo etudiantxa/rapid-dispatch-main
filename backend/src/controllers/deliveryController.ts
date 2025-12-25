@@ -1,12 +1,15 @@
 import { Request, Response } from 'express';
 import Delivery from '../models/Delivery';
-import { IUser } from '../models/User';
+import { sendSms } from '../services/smsService';
+
+const generateOtp = (): string => {
+  return Math.floor(1000 + Math.random() * 9000).toString();
+};
 
 export const createDelivery = async (req: Request, res: Response) => {
   const {
     origin,
     destination,
-    otp,
     clientName,
     clientPhone,
     deliveryAddress,
@@ -15,9 +18,11 @@ export const createDelivery = async (req: Request, res: Response) => {
     estimatedValue,
     specialInstructions,
   } = req.body;
-  const vendor = (req.user as any).userId;
+  const vendor = req.user?.userId;
 
   try {
+    const otp = generateOtp();
+
     const delivery = new Delivery({
       vendor,
       origin,
@@ -32,16 +37,23 @@ export const createDelivery = async (req: Request, res: Response) => {
       specialInstructions,
     });
 
+    const smsMessage = `Votre code de confirmation pour la livraison TIAK-TIAK est : ${otp}`;
+    await sendSms(clientPhone, smsMessage);
+
     await delivery.save();
+
     res.status(201).json(delivery);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Something went wrong' });
+    console.error('Error creating delivery:', error);
+    if (error instanceof Error && error.message.includes('SMS')) {
+      return res.status(500).json({ message: 'Delivery created, but failed to send OTP SMS.' });
+    }
+    res.status(500).json({ message: 'Something went wrong while creating the delivery.' });
   }
 };
 
 export const getDeliveries = async (req: Request, res: Response) => {
-  const vendor = (req.user as any).userId;
+  const vendor = req.user?.userId;
 
   try {
     const deliveries = await Delivery.find({ vendor });

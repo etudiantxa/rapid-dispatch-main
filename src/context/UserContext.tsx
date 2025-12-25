@@ -50,7 +50,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
 
   const login = async (token: string) => {
     localStorage.setItem('token', token);
-    await fetchUser(); // Re-fetch user data after login
+    await fetchUser();
   };
 
   const logout = () => {
