@@ -27,6 +27,7 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
+      <BrowserRouter>
         <Routes>
           {/* Redirect root to login */}
           <Route path="/" element={<Navigate to="/login" replace />} />
@@ -49,6 +50,7 @@ const App = () => (
           {/* Catch-all */}
           <Route path="*" element={<NotFound />} />
         </Routes>
+      </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
 );
