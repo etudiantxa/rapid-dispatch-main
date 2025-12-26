@@ -1,3 +1,4 @@
+// Refreshing the PR to fix the merge button visibility.
 import {
   Popover,
   PopoverContent,
