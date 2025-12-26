@@ -1,3 +1,4 @@
+// Refreshing the PR with a minor change to hopefully resolve the UI bug.
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '@/components/Sidebar';
