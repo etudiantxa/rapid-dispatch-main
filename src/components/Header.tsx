@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useUser } from '../context/UserContext';
-import { useNotifications } from '../context/NotificationContext';
+import NotificationPopover from './NotificationPopover';
 
 interface HeaderProps {
   showSearch?: boolean;
@@ -9,7 +9,6 @@ interface HeaderProps {
 
 const Header = ({ showSearch = true, showNewDeliveryButton = true }: HeaderProps) => {
   const { user, logout, loading } = useUser();
-  const { unreadCount } = useNotifications();
 
   return (
     <header className="h-16 flex items-center justify-between px-6 border-b border-uber-gray bg-uber-black text-white">
@@ -33,14 +32,7 @@ const Header = ({ showSearch = true, showNewDeliveryButton = true }: HeaderProps
       )}
 
       <div className="flex items-center gap-4">
-        <button className="relative p-2 rounded-full hover:bg-uber-gray transition-colors">
-          <span className="material-symbols-outlined">notifications</span>
-          {unreadCount > 0 && (
-            <span className="absolute top-1 right-1 size-4 bg-red-600 text-white text-xs font-bold rounded-full flex items-center justify-center">
-              {unreadCount}
-            </span>
-          )}
-        </button>
+        <NotificationPopover />
 
         {user?.role === 'vendor' && showNewDeliveryButton && (
           <Link
