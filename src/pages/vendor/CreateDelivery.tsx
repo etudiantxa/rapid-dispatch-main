@@ -1,6 +1,8 @@
+// Refreshing the PR with a minor change to hopefully resolve the UI bug.
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '@/components/Sidebar';
+import Header from '@/components/Header';
 import { dakarQuartiers } from '@/data/mockDeliveries';
 import axios from 'axios';
 import { useToast } from '@/components/ui/use-toast';
@@ -14,14 +16,8 @@ const CreateDelivery = () => {
   const [isSubmitted, setIsSubmitted] = useState(false);
 
   const [formData, setFormData] = useState({
-    clientName: '',
-    clientPhone: '',
-    deliveryAddress: '',
-    destination: '',
-    packageDescription: '',
-    itemCount: 1,
-    estimatedValue: '',
-    specialInstructions: '',
+    clientName: '', clientPhone: '', deliveryAddress: '', destination: '',
+    packageDescription: '', itemCount: 1, estimatedValue: '', specialInstructions: '',
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -40,35 +36,27 @@ const CreateDelivery = () => {
           navigate('/login');
           return;
         }
-
         const { data: newDelivery } = await axios.post(
           '/api/deliveries',
           { ...formData, origin: 'Dakar, Sénégal' },
           { headers: { Authorization: `Bearer ${token}` } }
         );
-
         addNotification(`Livraison #${newDelivery._id.substring(0, 6)} créée pour ${newDelivery.clientName}.`);
-
         setIsSubmitted(true);
-        setTimeout(() => {
-          navigate('/vendor/tracking');
-        }, 2000);
+        setTimeout(() => navigate('/vendor/tracking'), 2000);
       } catch (error) {
-        toast({
-          title: 'Erreur',
-          description: 'Impossible de créer la livraison. Veuillez réessayer.',
-          variant: 'destructive',
-        });
+        toast({ title: 'Erreur', description: 'Impossible de créer la livraison.', variant: 'destructive' });
       }
     }
   };
 
   if (isSubmitted) {
     return (
-      <div className="bg-uber-black text-white min-h-screen flex flex-col antialiased">
-        <div className="flex flex-1 w-full">
-          <Sidebar userType="vendor" />
-          <main className="flex-1 flex items-center justify-center">
+      <div className="bg-uber-dark-gray text-white h-screen flex w-full">
+        <Sidebar userType="vendor" />
+        <main className="flex-1 flex flex-col min-w-0">
+          <Header showNewDeliveryButton={false} showSearch={false} />
+          <div className="flex-1 flex items-center justify-center">
             <div className="text-center animate-fade-in-up">
               <div className="size-20 mx-auto mb-6 rounded-full bg-tiak-green/20 flex items-center justify-center">
                 <span className="material-symbols-outlined text-tiak-green text-4xl">check_circle</span>
@@ -77,109 +65,117 @@ const CreateDelivery = () => {
               <p className="text-gray-400 mb-6">La commande pour <strong className="text-white">{formData.clientName}</strong> a été enregistrée.</p>
               <p className="text-sm text-gray-500">Redirection vers le suivi...</p>
             </div>
-          </main>
-        </div>
+          </div>
+        </main>
       </div>
     );
   }
 
   return (
-    <div className="bg-uber-black text-white min-h-screen flex flex-col antialiased selection:bg-tiak-green selection:text-black">
-      <header className="flex items-center justify-between border-b border-uber-gray-medium px-6 py-4 bg-black sticky top-0 z-50">
-          <h2 className="text-xl font-bold tracking-tight">Nouvelle livraison</h2>
-      </header>
-
-      <main className="flex-1 w-full max-w-[900px] mx-auto p-4 lg:p-8">
-        <div className="flex items-center justify-between mb-10 px-4">
-          {[1, 2, 3].map((s) => (
-            <div key={s} className="flex items-center">
-              <div className={`size-10 rounded-full flex items-center justify-center font-bold text-sm transition-all ${s <= step ? 'bg-tiak-green text-black' : 'bg-uber-gray text-gray-400'}`}>
-                {s < step ? <span className="material-symbols-outlined text-lg">check</span> : s}
-              </div>
-              {s < 3 && <div className={`w-24 lg:w-40 h-1 mx-2 rounded-full transition-all ${s < step ? 'bg-tiak-green' : 'bg-uber-gray'}`} />}
-            </div>
-          ))}
-        </div>
-
-        <form onSubmit={handleSubmit} className="bg-uber-gray rounded-2xl p-6 lg:p-8">
-          {step === 1 && (
-            <div className="space-y-6 animate-fade-in-up">
-              <h2 className="text-xl font-bold mb-4 flex items-center gap-2"><span className="material-symbols-outlined text-tiak-green">person</span>Informations client</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+    <div className="bg-uber-dark-gray text-white h-screen flex w-full font-sans">
+      <Sidebar userType="vendor" />
+      <main className="flex-1 flex flex-col min-w-0">
+        <Header showNewDeliveryButton={false} showSearch={false} />
+        <div className="flex-1 overflow-y-auto p-4 lg:p-8">
+          <div className="max-w-[900px] mx-auto">
+            <div className="flex items-center gap-4 mb-8">
+                <button onClick={() => navigate(-1)} className="p-2 rounded-full hover:bg-uber-gray transition-colors">
+                    <span className="material-symbols-outlined">arrow_back</span>
+                </button>
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Nom du client</label>
-                  <input type="text" name="clientName" value={formData.clientName} onChange={handleChange} placeholder="Ex: Moussa Diop" className="w-full h-12 px-4 rounded-lg border border-uber-gray-medium bg-uber-dark-gray focus:ring-2 focus:ring-tiak-green/30 focus:border-tiak-green text-white placeholder:text-gray-500 transition-all outline-none" />
+                    <h1 className="text-2xl font-bold">Nouvelle livraison</h1>
+                    <p className="text-gray-400 text-sm">Remplissez les informations pour créer votre course</p>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Téléphone</label>
-                  <input type="tel" name="clientPhone" value={formData.clientPhone} onChange={handleChange} placeholder="+221 77 000 00 00" className="w-full h-12 px-4 rounded-lg border border-uber-gray-medium bg-uber-dark-gray focus:ring-2 focus:ring-tiak-green/30 focus:border-tiak-green text-white placeholder:text-gray-500 transition-all outline-none" />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Adresse de livraison</label>
-                <input type="text" name="deliveryAddress" value={formData.deliveryAddress} onChange={handleChange} placeholder="Ex: Rue 10, Plateau" className="w-full h-12 px-4 rounded-lg border border-uber-gray-medium bg-uber-dark-gray focus:ring-2 focus:ring-tiak-green/30 focus:border-tiak-green text-white placeholder:text-gray-500 transition-all outline-none" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Quartier</label>
-                <select name="destination" value={formData.destination} onChange={handleChange} className="w-full h-12 px-4 rounded-lg border border-uber-gray-medium bg-uber-dark-gray focus:ring-2 focus:ring-tiak-green/30 focus:border-tiak-green text-white transition-all outline-none appearance-none">
-                  <option value="">Sélectionner un quartier</option>
-                  {dakarQuartiers.map((q) => <option key={q} value={q}>{q}</option>)}
-                </select>
-              </div>
             </div>
-          )}
 
-          {step === 2 && (
-            <div className="space-y-6 animate-fade-in-up">
-              <h2 className="text-xl font-bold mb-4 flex items-center gap-2"><span className="material-symbols-outlined text-tiak-green">inventory_2</span>Informations colis</h2>
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Description du colis</label>
-                <textarea name="packageDescription" value={formData.packageDescription} onChange={handleChange} rows={3} placeholder="Décrivez le contenu du colis..." className="w-full px-4 py-3 rounded-lg border border-uber-gray-medium bg-uber-dark-gray focus:ring-2 focus:ring-tiak-green/30 focus:border-tiak-green text-white placeholder:text-gray-500 transition-all outline-none resize-none" />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Nombre d'articles</label>
-                  <input type="number" name="itemCount" value={formData.itemCount} onChange={handleChange} min="1" className="w-full h-12 px-4 rounded-lg border border-uber-gray-medium bg-uber-dark-gray focus:ring-2 focus:ring-tiak-green/30 focus:border-tiak-green text-white transition-all outline-none" />
+            <div className="flex items-center justify-between mb-10 px-4">
+              {[1, 2, 3].map((s) => (
+                <div key={s} className="flex items-center">
+                  <div className={`size-10 rounded-full flex items-center justify-center font-bold text-sm transition-all ${s <= step ? 'bg-tiak-green text-black' : 'bg-uber-gray text-gray-400'}`}>
+                    {s < step ? <span className="material-symbols-outlined text-lg">check</span> : s}
+                  </div>
+                  {s < 3 && <div className={`w-24 lg:w-40 h-1 mx-2 rounded-full transition-all ${s < step ? 'bg-tiak-green' : 'bg-uber-gray'}`} />}
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Valeur estimée (FCFA)</label>
-                  <input type="number" name="estimatedValue" value={formData.estimatedValue} onChange={handleChange} placeholder="Ex: 15000" className="w-full h-12 px-4 rounded-lg border border-uber-gray-medium bg-uber-dark-gray focus:ring-2 focus:ring-tiak-green/30 focus:border-tiak-green text-white placeholder:text-gray-500 transition-all outline-none" />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Instructions spéciales</label>
-                <input type="text" name="specialInstructions" value={formData.specialInstructions} onChange={handleChange} placeholder="Ex: Fragile, appeler avant livraison..." className="w-full h-12 px-4 rounded-lg border border-uber-gray-medium bg-uber-dark-gray focus:ring-2 focus:ring-tiak-green/30 focus:border-tiak-green text-white placeholder:text-gray-500 transition-all outline-none" />
-              </div>
+              ))}
             </div>
-          )}
 
-          {step === 3 && (
-            <div className="space-y-6 animate-fade-in-up">
-              <h2 className="text-xl font-bold mb-4 flex items-center gap-2"><span className="material-symbols-outlined text-tiak-green">fact_check</span>Confirmation</h2>
-              <div className="bg-uber-dark-gray rounded-xl p-5 space-y-4">
-                <div className="flex justify-between items-center pb-3 border-b border-uber-gray"><span className="text-gray-400">Client</span><span className="font-medium">{formData.clientName}</span></div>
-                <div className="flex justify-between items-center pb-3 border-b border-uber-gray"><span className="text-gray-400">Quartier</span><span className="font-medium">{formData.destination}</span></div>
-                <div className="flex justify-between items-center pb-3 border-b border-uber-gray"><span className="text-gray-400">Colis</span><span className="font-medium">{formData.itemCount} article(s)</span></div>
-                <div className="flex justify-between items-center"><span className="text-gray-400">Frais de livraison</span><span className="font-bold text-tiak-green text-lg">1 500 FCFA</span></div>
-              </div>
-              <div className="flex items-start gap-3 p-4 bg-tiak-green/10 rounded-lg border border-tiak-green/20">
-                <span className="material-symbols-outlined text-tiak-green">info</span>
-                <p className="text-sm text-gray-300">Un code OTP sera envoyé au client pour valider la livraison. Le paiement sera collecté à la livraison.</p>
-              </div>
-            </div>
-          )}
-
-          <div className="flex justify-between mt-8 pt-6 border-t border-uber-gray-medium">
-            {step > 1 ? <button type="button" onClick={() => setStep(step - 1)} className="flex items-center gap-2 px-6 py-3 rounded-lg bg-uber-gray-medium hover:bg-uber-gray text-white font-medium transition-colors"><span className="material-symbols-outlined text-lg">arrow_back</span>Retour</button> : <div />}
-            <button type="submit" className="flex items-center gap-2 px-8 py-3 rounded-lg bg-tiak-green hover:bg-tiak-green-hover text-black font-bold transition-colors">
-              {step === 3 ? (
-                <><span>Confirmer</span><span className="material-symbols-outlined text-lg">check</span></>
-              ) : (
-                <><span>Suivant</span><span className="material-symbols-outlined text-lg">arrow_forward</span></>
+            <form onSubmit={handleSubmit} className="bg-uber-black rounded-2xl p-6 lg:p-8 border border-uber-gray">
+              {step === 1 && (
+                 <div className="space-y-6 animate-fade-in-up">
+                 <h2 className="text-xl font-bold mb-4 flex items-center gap-2"><span className="material-symbols-outlined text-tiak-green">person</span>Informations client</h2>
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                   <div>
+                     <label className="block text-sm font-medium text-gray-300 mb-2">Nom du client</label>
+                     <input type="text" name="clientName" value={formData.clientName} onChange={handleChange} placeholder="Ex: Moussa Diop" className="w-full h-12 px-4 rounded-lg border border-uber-gray-medium bg-uber-dark-gray focus:ring-2 focus:ring-tiak-green/30 focus:border-tiak-green text-white placeholder:text-gray-500 transition-all outline-none" />
+                   </div>
+                   <div>
+                     <label className="block text-sm font-medium text-gray-300 mb-2">Téléphone</label>
+                     <input type="tel" name="clientPhone" value={formData.clientPhone} onChange={handleChange} placeholder="+221 77 000 00 00" className="w-full h-12 px-4 rounded-lg border border-uber-gray-medium bg-uber-dark-gray focus:ring-2 focus:ring-tiak-green/30 focus:border-tiak-green text-white placeholder:text-gray-500 transition-all outline-none" />
+                   </div>
+                 </div>
+                 <div>
+                   <label className="block text-sm font-medium text-gray-300 mb-2">Adresse de livraison</label>
+                   <input type="text" name="deliveryAddress" value={formData.deliveryAddress} onChange={handleChange} placeholder="Ex: Rue 10, Plateau" className="w-full h-12 px-4 rounded-lg border border-uber-gray-medium bg-uber-dark-gray focus:ring-2 focus:ring-tiak-green/30 focus:border-tiak-green text-white placeholder:text-gray-500 transition-all outline-none" />
+                 </div>
+                 <div>
+                   <label className="block text-sm font-medium text-gray-300 mb-2">Quartier</label>
+                   <select name="destination" value={formData.destination} onChange={handleChange} className="w-full h-12 px-4 rounded-lg border border-uber-gray-medium bg-uber-dark-gray focus:ring-2 focus:ring-tiak-green/30 focus:border-tiak-green text-white transition-all outline-none appearance-none">
+                     <option value="">Sélectionner un quartier</option>
+                     {dakarQuartiers.map((q) => <option key={q} value={q}>{q}</option>)}
+                   </select>
+                 </div>
+               </div>
               )}
-            </button>
+
+              {step === 2 && (
+                <div className="space-y-6 animate-fade-in-up">
+                <h2 className="text-xl font-bold mb-4 flex items-center gap-2"><span className="material-symbols-outlined text-tiak-green">inventory_2</span>Informations colis</h2>
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Description du colis</label>
+                  <textarea name="packageDescription" value={formData.packageDescription} onChange={handleChange} rows={3} placeholder="Décrivez le contenu du colis..." className="w-full px-4 py-3 rounded-lg border border-uber-gray-medium bg-uber-dark-gray focus:ring-2 focus:ring-tiak-green/30 focus:border-tiak-green text-white placeholder:text-gray-500 transition-all outline-none resize-none" />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Nombre d'articles</label>
+                    <input type="number" name="itemCount" value={formData.itemCount} onChange={handleChange} min="1" className="w-full h-12 px-4 rounded-lg border border-uber-gray-medium bg-uber-dark-gray focus:ring-2 focus:ring-tiak-green/30 focus:border-tiak-green text-white transition-all outline-none" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Valeur estimée (FCFA)</label>
+                    <input type="number" name="estimatedValue" value={formData.estimatedValue} onChange={handleChange} placeholder="Ex: 15000" className="w-full h-12 px-4 rounded-lg border border-uber-gray-medium bg-uber-dark-gray focus:ring-2 focus:ring-tiak-green/30 focus:border-tiak-green text-white placeholder:text-gray-500 transition-all outline-none" />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Instructions spéciales</label>
+                  <input type="text" name="specialInstructions" value={formData.specialInstructions} onChange={handleChange} placeholder="Ex: Fragile, appeler avant livraison..." className="w-full h-12 px-4 rounded-lg border border-uber-gray-medium bg-uber-dark-gray focus:ring-2 focus:ring-tiak-green/30 focus:border-tiak-green text-white placeholder:text-gray-500 transition-all outline-none" />
+                </div>
+              </div>
+              )}
+
+              {step === 3 && (
+                <div className="space-y-6 animate-fade-in-up">
+                <h2 className="text-xl font-bold mb-4 flex items-center gap-2"><span className="material-symbols-outlined text-tiak-green">fact_check</span>Confirmation</h2>
+                <div className="bg-uber-dark-gray rounded-xl p-5 space-y-4">
+                  <div className="flex justify-between items-center pb-3 border-b border-uber-gray"><span className="text-gray-400">Client</span><span className="font-medium">{formData.clientName}</span></div>
+                  <div className="flex justify-between items-center pb-3 border-b border-uber-gray"><span className="text-gray-400">Quartier</span><span className="font-medium">{formData.destination}</span></div>
+                  <div className="flex justify-between items-center pb-3 border-b border-uber-gray"><span className="text-gray-400">Colis</span><span className="font-medium">{formData.itemCount} article(s)</span></div>
+                  <div className="flex justify-between items-center"><span className="text-gray-400">Frais de livraison</span><span className="font-bold text-tiak-green text-lg">1 500 FCFA</span></div>
+                </div>
+                <div className="flex items-start gap-3 p-4 bg-tiak-green/10 rounded-lg border border-tiak-green/20">
+                  <span className="material-symbols-outlined text-tiak-green">info</span>
+                  <p className="text-sm text-gray-300">Un code OTP sera envoyé au client pour valider la livraison. Le paiement sera collecté à la livraison.</p>
+                </div>
+              </div>
+              )}
+
+              <div className="flex justify-between mt-8 pt-6 border-t border-uber-gray-medium">
+                {step > 1 ? <button type="button" onClick={() => setStep(step - 1)} className="flex items-center gap-2 px-6 py-3 rounded-lg bg-uber-gray-medium hover:bg-uber-gray text-white font-medium transition-colors"><span className="material-symbols-outlined text-lg">arrow_back</span>Retour</button> : <div />}
+                <button type="submit" className="flex items-center gap-2 px-8 py-3 rounded-lg bg-tiak-green hover:bg-tiak-green-hover text-black font-bold transition-colors">
+                  {step === 3 ? ( <><span>Confirmer</span><span className="material-symbols-outlined text-lg">check</span></> ) : ( <><span>Suivant</span><span className="material-symbols-outlined text-lg">arrow_forward</span></> )}
+                </button>
+              </div>
+            </form>
           </div>
-        </form>
+        </div>
       </main>
     </div>
   );
