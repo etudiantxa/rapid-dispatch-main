@@ -179,9 +179,9 @@ const Login = () => {
 
               {/* Forgot Password */}
               <div className="flex justify-end">
-                <Link to="/forgot-password" className="text-sm font-medium text-gray-500 hover:text-black underline underline-offset-4 decoration-1">
+                <a className="text-sm font-medium text-gray-500 hover:text-black underline underline-offset-4 decoration-1" href="#">
                   Mot de passe oublié ?
-                </Link>
+                </a>
               </div>
 
               {/* Submit */}
