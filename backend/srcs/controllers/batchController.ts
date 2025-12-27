@@ -2,9 +2,6 @@ import { Request, Response } from 'express';
 import Batch from '../models/Batch';
 import Delivery from '../models/Delivery';
 
-// This controller is simplified for now.
-// In a real application, you'd have more complex logic for batch creation.
-
 export const getCourierBatches = async (req: Request, res: Response) => {
   const courierId = req.user?.userId;
   try {

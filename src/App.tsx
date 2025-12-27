@@ -7,6 +7,8 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 // Auth Pages
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
+import ForgotPassword from "./pages/auth/ForgotPassword";
+import ResetPassword from "./pages/auth/ResetPassword";
 
 // Vendor Pages
 import Tracking from "./pages/vendor/Tracking";
@@ -27,28 +29,27 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
+      <BrowserRouter>
         <Routes>
-          {/* Redirect root to login */}
           <Route path="/" element={<Navigate to="/login" replace />} />
           
-          {/* Auth Routes */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password/:token" element={<ResetPassword />} />
           
-          {/* Vendor Routes */}
           <Route path="/vendor/dashboard" element={<Tracking />} />
           <Route path="/vendor/tracking" element={<Tracking />} />
           <Route path="/vendor/create-delivery" element={<CreateDelivery />} />
           
-          {/* Courier Routes */}
           <Route path="/courier/home" element={<CourierHome />} />
           <Route path="/courier/batch/:batchId" element={<BatchDetails />} />
           <Route path="/courier/delivery-in-progress" element={<DeliveryInProgress />} />
           <Route path="/courier/otp-validation" element={<OTPValidation />} />
           
-          {/* Catch-all */}
           <Route path="*" element={<NotFound />} />
         </Routes>
+      </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
 );
