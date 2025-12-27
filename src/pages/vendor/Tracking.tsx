@@ -1,263 +1,156 @@
-import { useState } from 'react';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
-import StatusBadge from '@/components/StatusBadge';
-import NotificationToast from '@/components/NotificationToast';
-import { mockDeliveries, Delivery } from '@/data/mockDeliveries';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
+import { useEffect, useState } from 'react';
+import axios from 'axios';
+import { Link } from 'react-router-dom';
+import { Delivery } from '@/types';
 
-/**
- * Page de suivi des livraisons en temps réel pour le vendeur
- * Affiche la liste des commandes, la carte statique et les notifications
- */
 const Tracking = () => {
-  const [selectedDelivery, setSelectedDelivery] = useState<Delivery | null>(
-    mockDeliveries.find(d => d.status === 'EN_COURS') || null
-  );
-  const [activeFilter, setActiveFilter] = useState<string>('all');
+    const [deliveries, setDeliveries] = useState<Delivery[]>([]);
+    const [filteredDeliveries, setFilteredDeliveries] = useState<Delivery[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [activeTab, setActiveTab] = useState('all');
 
-  const filters = [
-    { id: 'all', label: 'Tout' },
-    { id: 'en_cours', label: 'En cours' },
-    { id: 'programmees', label: 'Programmées' },
-    { id: 'terminees', label: 'Terminées' },
-  ];
+    useEffect(() => {
+        const fetchDeliveries = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    setLoading(false);
+                    return;
+                }
+                const { data } = await axios.get('/api/deliveries', {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                setDeliveries(data.sort((a: Delivery, b: Delivery) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+                setFilteredDeliveries(data);
+                setLoading(false);
+            } catch (error) {
+                console.error('Error fetching deliveries:', error);
+                setLoading(false);
+            }
+        };
+        fetchDeliveries();
+    }, []);
 
-  const filteredDeliveries = mockDeliveries.filter(d => {
-    if (activeFilter === 'all') return true;
-    if (activeFilter === 'en_cours') return d.status === 'EN_COURS' || d.status === 'PRISE_EN_CHARGE';
-    if (activeFilter === 'programmees') return d.status === 'CREEE' || d.status === 'DISPONIBLE';
-    if (activeFilter === 'terminees') return d.status === 'LIVREE';
-    return true;
-  });
+    useEffect(() => {
+        let result = deliveries;
+        if (activeTab !== 'all') {
+            result = result.filter(d => d.status === activeTab);
+        }
+        if (searchTerm) {
+            result = result.filter(d =>
+                d.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                d._id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                d.destination.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+        }
+        setFilteredDeliveries(result);
+    }, [searchTerm, activeTab, deliveries]);
 
-  return (
-    <div className="bg-uber-dark-gray text-white font-sans overflow-hidden h-screen flex w-full">
-      {/* Sidebar */}
-      <Sidebar userType="vendor" />
 
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col min-w-0 bg-uber-dark-gray">
-        {/* Header */}
-        <Header />
+    const getStatusVariant = (status: string) => {
+        switch (status) {
+            case 'pending': return 'secondary';
+            case 'assigned': return 'warning';
+            case 'in_transit': return 'info';
+            case 'delivered': return 'success';
+            case 'cancelled': return 'destructive';
+            default: return 'default';
+        }
+    };
 
-        {/* Content */}
-        <div className="flex-1 flex overflow-hidden">
-          {/* Liste des commandes */}
-          <div className="w-full md:w-[400px] flex flex-col border-r border-uber-gray bg-uber-black">
-            {/* Filtres */}
-            <div className="p-4 border-b border-uber-gray">
-              <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-                {filters.map(filter => (
-                  <button
-                    key={filter.id}
-                    onClick={() => setActiveFilter(filter.id)}
-                    className={`px-4 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
-                      activeFilter === filter.id
-                        ? 'bg-white text-black font-bold'
-                        : 'bg-uber-gray text-white hover:bg-[#333]'
-                    }`}
-                  >
-                    {filter.label}
-                  </button>
-                ))}
-              </div>
-            </div>
+    const getStatusText = (status: string) => {
+        const texts: { [key: string]: string } = {
+            pending: 'En attente',
+            assigned: 'Assignée',
+            in_transit: 'En transit',
+            delivered: 'Livrée',
+            cancelled: 'Annulée'
+        };
+        return texts[status] || status;
+    };
 
-            {/* Liste */}
-            <div className="flex-1 overflow-y-auto">
-              {filteredDeliveries.map(delivery => (
-                <div
-                  key={delivery.id}
-                  onClick={() => setSelectedDelivery(delivery)}
-                  className={`group flex flex-col gap-3 p-5 border-b border-uber-gray cursor-pointer transition-all ${
-                    selectedDelivery?.id === delivery.id
-                      ? 'bg-uber-gray/30 border-l-4 border-l-tiak-green'
-                      : 'hover:bg-uber-gray/30'
-                  } ${delivery.status === 'LIVREE' ? 'opacity-60 hover:opacity-100' : ''}`}
-                >
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h4 className="text-white font-bold text-sm">#{delivery.orderId}</h4>
-                        <span className="size-1.5 rounded-full bg-gray-500" />
-                        <span className="text-xs text-gray-400">{delivery.quartier}</span>
-                      </div>
-                      <p className="text-gray-400 text-xs mt-0.5">
-                        {delivery.clientName} • {delivery.packageDescription}
-                      </p>
-                    </div>
-                    <StatusBadge status={delivery.status} />
-                  </div>
+    const tabs = [
+        { id: 'all', label: 'Toutes' },
+        { id: 'pending', label: 'En attente' },
+        { id: 'in_transit', label: 'En transit' },
+        { id: 'delivered', label: 'Terminées' },
+    ];
 
-                  <div className="flex items-center justify-between mt-2">
-                    <div className="flex items-center gap-2">
-                      {delivery.courier ? (
-                        <>
-                          <div
-                            className="size-6 rounded-full bg-gray-700 bg-cover bg-center"
-                            style={{ backgroundImage: delivery.courier.avatar ? `url("${delivery.courier.avatar}")` : undefined }}
-                          >
-                            {!delivery.courier.avatar && (
-                              <span className="flex items-center justify-center h-full text-[10px] text-white">
-                                {delivery.courier.name.charAt(0)}
-                              </span>
-                            )}
-                          </div>
-                          <span className="text-xs text-gray-300 font-medium">{delivery.courier.name}</span>
-                        </>
-                      ) : (
-                        <span className="text-xs text-gray-500 italic">
-                          {delivery.status === 'CREEE' ? 'Recherche livreur...' : 'En attente d\'assignation...'}
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-1 text-xs text-white font-medium">
-                      <span className="material-symbols-outlined text-[14px] text-gray-400">
-                        {delivery.status === 'LIVREE' ? 'check_circle' : 'schedule'}
-                      </span>
-                      {delivery.estimatedDelivery}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Carte et détails */}
-          <div className="hidden md:flex flex-1 relative bg-uber-dark-gray flex-col">
-            {/* Carte statique de Dakar */}
-            <div
-              className="absolute inset-0 bg-cover bg-center grayscale opacity-70"
-              style={{
-                backgroundImage: `url("https://lh3.googleusercontent.com/aida-public/AB6AXuAxfK5aTw7mwtoC0MakE8TGQdAp-_EdU3QUIqK2e_rKBNo2CxoSTOtgvJjk-YgbN1CRjHINFALPEEvfqwYRc70bmSoFuje7fD4yuS4nlouNRKhKO_FSYrtCPUUqUuMHswTTud7l9wpK0ZHlG-Mpu3U8USHnWfJycd37xWh8RNZdUGwb5gyZ3_bfbv5VIvJiy_Vx5fpVJp-TLQiR45EuHY9cQSQB62Yhus9XSk9MLjoL4RwZJWJPeI73S0Z7W8K4q9LUbCXnv9dNykOf")`
-              }}
-            >
-              <div className="absolute inset-0 bg-black/40" />
-              {/* SVG Route */}
-              <svg className="absolute inset-0 w-full h-full pointer-events-none drop-shadow-xl" style={{ zIndex: 5 }}>
-                <path
-                  className="animate-pulse"
-                  d="M 400 600 Q 500 500 600 400 T 800 300"
-                  fill="none"
-                  stroke="#06C167"
-                  strokeDasharray="10,10"
-                  strokeLinecap="round"
-                  strokeWidth="6"
-                />
-                <circle cx="400" cy="600" fill="white" r="8" stroke="black" strokeWidth="3" />
-                <circle cx="800" cy="300" fill="#06C167" r="8" stroke="white" strokeWidth="3" />
-              </svg>
-            </div>
-
-            {/* Contenu flottant */}
-            <div className="relative z-10 flex flex-col h-full pointer-events-none p-6 justify-between">
-              {/* Notifications */}
-              <div className="flex flex-col items-end gap-3 pointer-events-auto">
-                <NotificationToast
-                  type="success"
-                  title="Livraison effectuée"
-                  message="Commande #CMD-4825 livrée à Almadies"
-                />
-                <NotificationToast
-                  type="info"
-                  title="Livreur en route"
-                  message="Ibrahima arrive dans 5 min"
-                />
-              </div>
-
-              {/* Panneau inférieur */}
-              <div className="flex gap-4 items-end pointer-events-auto w-full max-w-5xl mx-auto">
-                {/* Carte livreur */}
-                {selectedDelivery?.courier && (
-                  <div className="hidden lg:block w-72 bg-uber-black rounded-2xl p-4 shadow-2xl border border-uber-gray">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div
-                        className="size-12 rounded-full bg-cover bg-center border-2 border-tiak-green"
-                        style={{ backgroundImage: `url("${selectedDelivery.courier.avatar}")` }}
-                      />
-                      <div>
-                        <h3 className="text-white font-bold text-sm">{selectedDelivery.courier.name}</h3>
-                        <div className="flex items-center text-xs text-gray-400">
-                          <span className="material-symbols-outlined text-[14px] mr-1">star</span>
-                          <span>{selectedDelivery.courier.rating} • {selectedDelivery.courier.totalDeliveries.toLocaleString()} courses</span>
+    return (
+        <div className="bg-uber-dark-gray text-white h-screen flex w-full font-sans">
+            <Sidebar userType="vendor" />
+            <main className="flex-1 flex flex-col min-w-0">
+                <Header onSearchChange={setSearchTerm} />
+                <div className="flex-1 overflow-y-auto p-4 lg:p-8">
+                    <div className="max-w-7xl mx-auto">
+                        <div className="flex justify-between items-center mb-6">
+                            <h1 className="text-2xl font-bold">Suivi des livraisons</h1>
                         </div>
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <button className="flex-1 h-9 rounded-lg bg-uber-gray hover:bg-[#333] text-white flex items-center justify-center transition-colors">
-                        <span className="material-symbols-outlined text-[18px]">chat</span>
-                      </button>
-                      <button className="flex-1 h-9 rounded-lg bg-white hover:bg-gray-200 text-black flex items-center justify-center transition-colors">
-                        <span className="material-symbols-outlined text-[18px]">call</span>
-                      </button>
-                    </div>
-                  </div>
-                )}
 
-                {/* Timeline de progression */}
-                <div className="flex-1 bg-uber-black rounded-2xl p-6 shadow-2xl border border-uber-gray">
-                  <div className="flex justify-between items-center mb-6">
-                    <div>
-                      <h2 className="text-xl font-bold text-white mb-1">
-                        En route vers {selectedDelivery?.quartier || 'Plateau'}
-                      </h2>
-                      <p className="text-gray-400 text-sm">
-                        Arrivée estimée: <span className="text-tiak-green font-bold">{selectedDelivery?.estimatedDelivery || '14:45'}</span>
-                      </p>
-                    </div>
-                    <button className="text-sm text-gray-400 hover:text-white underline">Détails</button>
-                  </div>
-
-                  {/* Progress Steps */}
-                  <div className="relative flex items-center justify-between w-full px-4">
-                    {/* Background line */}
-                    <div className="absolute left-4 right-4 top-1/2 h-1 bg-gray-800 -z-0 rounded-full" />
-                    {/* Progress line */}
-                    <div className="absolute left-4 top-1/2 h-1 bg-tiak-green -z-0 rounded-full transition-all duration-1000" style={{ width: '60%' }} />
-
-                    {/* Steps */}
-                    {['Créée', 'Assignée', 'Prise', 'En cours', 'Livrée'].map((step, index) => {
-                      const isCompleted = index < 3;
-                      const isCurrent = index === 3;
-                      const isPending = index > 3;
-
-                      return (
-                        <div key={step} className="relative flex flex-col items-center gap-2 group">
-                          <div
-                            className={`rounded-full border-4 border-uber-black flex items-center justify-center z-10 ${
-                              isCompleted
-                                ? 'size-6 bg-tiak-green outline outline-2 outline-tiak-green text-black'
-                                : isCurrent
-                                ? 'size-8 bg-black border-tiak-green text-tiak-green shadow-[0_0_15px_rgba(6,193,103,0.4)]'
-                                : 'size-6 bg-gray-800 outline outline-1 outline-gray-600'
-                            }`}
-                          >
-                            {isCompleted && (
-                              <span className="material-symbols-outlined text-[14px] font-bold">check</span>
-                            )}
-                            {isCurrent && (
-                              <span className="material-symbols-outlined text-[16px] filled animate-pulse">local_shipping</span>
-                            )}
-                          </div>
-                          <span
-                            className={`text-[10px] font-medium uppercase tracking-wide absolute -bottom-6 ${
-                              isCurrent ? 'font-bold text-white' : isPending ? 'text-gray-600' : 'text-gray-400'
-                            }`}
-                          >
-                            {step}
-                          </span>
+                        <div className="mb-6">
+                            <div className="border-b border-uber-gray flex space-x-2">
+                                {tabs.map(tab => (
+                                    <button
+                                        key={tab.id}
+                                        onClick={() => setActiveTab(tab.id)}
+                                        className={`px-4 py-2 text-sm font-medium transition-colors ${activeTab === tab.id ? 'text-white border-b-2 border-tiak-green' : 'text-gray-400 hover:text-white'}`}
+                                    >
+                                        {tab.label} ({tab.id === 'all' ? deliveries.length : deliveries.filter(d => d.status === tab.id).length})
+                                    </button>
+                                ))}
+                            </div>
                         </div>
-                      );
-                    })}
-                  </div>
+
+                        {loading ? (
+                            <div className="text-center text-gray-400 py-10">Chargement des livraisons...</div>
+                        ) : filteredDeliveries.length > 0 ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                                {filteredDeliveries.map((delivery) => (
+                                    <Link to={`/vendor/tracking/${delivery._id}`} key={delivery._id}>
+                                        <Card className="bg-uber-black border-uber-gray hover:border-tiak-green transition-all h-full flex flex-col">
+                                            <CardContent className="p-5 flex-1 flex flex-col justify-between">
+                                                <div>
+                                                    <div className="flex justify-between items-start mb-3">
+                                                        <p className="font-bold text-lg">{delivery.clientName}</p>
+                                                        <Badge variant={getStatusVariant(delivery.status)} className="capitalize">{getStatusText(delivery.status)}</Badge>
+                                                    </div>
+                                                    <p className="text-gray-400 text-sm mb-1 flex items-center gap-2">
+                                                        <span className="material-symbols-outlined text-base">pin_drop</span>
+                                                        {delivery.destination}
+                                                    </p>
+                                                     <p className="text-gray-400 text-sm mb-4 flex items-center gap-2">
+                                                        <span className="material-symbols-outlined text-base">receipt_long</span>
+                                                        <span className="font-mono text-xs">#{delivery._id.substring(0, 12)}</span>
+                                                    </p>
+                                                </div>
+                                                <div className="text-xs text-gray-500 mt-4 text-right">
+                                                   {new Date(delivery.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    </Link>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-center py-20 bg-uber-black rounded-2xl border border-uber-gray">
+                                <p className="text-gray-400 mb-4">Aucune livraison ne correspond à vos critères.</p>
+                                {deliveries.length === 0 && (
+                                    <Link to="/vendor/create-delivery" className="px-6 py-3 rounded-lg bg-tiak-green hover:bg-tiak-green-hover text-black font-bold transition-colors">
+                                        Créer votre première livraison
+                                    </Link>
+                                )}
+                            </div>
+                        )}
+                    </div>
                 </div>
-              </div>
-            </div>
-          </div>
+            </main>
         </div>
-      </main>
-    </div>
-  );
+    );
 };
 
 export default Tracking;
