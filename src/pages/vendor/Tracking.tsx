@@ -1,152 +1,100 @@
+import { useState, useEffect } from 'react';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
-import { useEffect, useState } from 'react';
-import axios from 'axios';
-import { Link } from 'react-router-dom';
+import { CardContent } from '@/components/ui/card';
 import { Delivery } from '@/types';
+import { useQuery } from '@tanstack/react-query';
+import axios from 'axios';
+import DeliveryDetailsCard from '@/components/DeliveryDetailsCard';
+
+const fetchDeliveries = async (): Promise<Delivery[]> => {
+    const token = localStorage.getItem('token');
+    if (!token) throw new Error('No token found');
+    const { data } = await axios.get('/api/deliveries', {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return data.sort((a: Delivery, b: Delivery) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+};
 
 const Tracking = () => {
-    const [deliveries, setDeliveries] = useState<Delivery[]>([]);
-    const [filteredDeliveries, setFilteredDeliveries] = useState<Delivery[]>([]);
-    const [loading, setLoading] = useState(true);
+    const { data: deliveries = [], isLoading: loading } = useQuery<Delivery[]>({
+        queryKey: ['deliveries'],
+        queryFn: fetchDeliveries
+    });
+
+    const [selectedDelivery, setSelectedDelivery] = useState<Delivery | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
-    const [activeTab, setActiveTab] = useState('all');
+
+    const filteredDeliveries = deliveries.filter(d =>
+        d.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        d._id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        d.destination.toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
     useEffect(() => {
-        const fetchDeliveries = async () => {
-            try {
-                const token = localStorage.getItem('token');
-                if (!token) {
-                    setLoading(false);
-                    return;
-                }
-                const { data } = await axios.get('/api/deliveries', {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                setDeliveries(data.sort((a: Delivery, b: Delivery) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
-                setFilteredDeliveries(data);
-                setLoading(false);
-            } catch (error) {
-                console.error('Error fetching deliveries:', error);
-                setLoading(false);
-            }
-        };
-        fetchDeliveries();
-    }, []);
-
-    useEffect(() => {
-        let result = deliveries;
-        if (activeTab !== 'all') {
-            result = result.filter(d => d.status === activeTab);
+        // Automatically select the first delivery if none is selected
+        if (!selectedDelivery && filteredDeliveries.length > 0) {
+            setSelectedDelivery(filteredDeliveries[0]);
         }
-        if (searchTerm) {
-            result = result.filter(d =>
-                d.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                d._id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                d.destination.toLowerCase().includes(searchTerm.toLowerCase())
-            );
+        // If the selected delivery is no longer in the filtered list, reset selection
+        if (selectedDelivery && !filteredDeliveries.some(d => d._id === selectedDelivery._id)) {
+             setSelectedDelivery(filteredDeliveries.length > 0 ? filteredDeliveries[0] : null);
         }
-        setFilteredDeliveries(result);
-    }, [searchTerm, activeTab, deliveries]);
+    }, [filteredDeliveries, selectedDelivery]);
 
+    const getStatusVariant = (status: string) => ({
+        'pending': 'secondary', 'assigned': 'warning', 'in_transit': 'info',
+        'delivered': 'success', 'cancelled': 'destructive'
+    }[status] || 'default');
 
-    const getStatusVariant = (status: string) => {
-        switch (status) {
-            case 'pending': return 'secondary';
-            case 'assigned': return 'warning';
-            case 'in_transit': return 'info';
-            case 'delivered': return 'success';
-            case 'cancelled': return 'destructive';
-            default: return 'default';
-        }
-    };
-
-    const getStatusText = (status: string) => {
-        const texts: { [key: string]: string } = {
-            pending: 'En attente',
-            assigned: 'Assignée',
-            in_transit: 'En transit',
-            delivered: 'Livrée',
-            cancelled: 'Annulée'
-        };
-        return texts[status] || status;
-    };
-
-    const tabs = [
-        { id: 'all', label: 'Toutes' },
-        { id: 'pending', label: 'En attente' },
-        { id: 'in_transit', label: 'En transit' },
-        { id: 'delivered', label: 'Terminées' },
-    ];
+     const getStatusText = (status: string) => ({
+        'pending': 'En attente', 'assigned': 'Assignée', 'in_transit': 'En transit',
+        'delivered': 'Livrée', 'cancelled': 'Annulée'
+    }[status] || status);
 
     return (
         <div className="bg-uber-dark-gray text-white h-screen flex w-full font-sans">
             <Sidebar userType="vendor" />
-            <main className="flex-1 flex flex-col min-w-0">
+            <main className="flex-1 flex flex-col min-w-0 h-screen">
                 <Header onSearchChange={setSearchTerm} />
-                <div className="flex-1 overflow-y-auto p-4 lg:p-8">
-                    <div className="max-w-7xl mx-auto">
-                        <div className="flex justify-between items-center mb-6">
-                            <h1 className="text-2xl font-bold">Suivi des livraisons</h1>
-                        </div>
+                <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-2 p-2 overflow-hidden">
 
-                        <div className="mb-6">
-                            <div className="border-b border-uber-gray flex space-x-2">
-                                {tabs.map(tab => (
-                                    <button
-                                        key={tab.id}
-                                        onClick={() => setActiveTab(tab.id)}
-                                        className={`px-4 py-2 text-sm font-medium transition-colors ${activeTab === tab.id ? 'text-white border-b-2 border-tiak-green' : 'text-gray-400 hover:text-white'}`}
-                                    >
-                                        {tab.label} ({tab.id === 'all' ? deliveries.length : deliveries.filter(d => d.status === tab.id).length})
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        {loading ? (
-                            <div className="text-center text-gray-400 py-10">Chargement des livraisons...</div>
-                        ) : filteredDeliveries.length > 0 ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                                {filteredDeliveries.map((delivery) => (
-                                    <Link to={`/vendor/tracking/${delivery._id}`} key={delivery._id}>
-                                        <Card className="bg-uber-black border-uber-gray hover:border-tiak-green transition-all h-full flex flex-col">
-                                            <CardContent className="p-5 flex-1 flex flex-col justify-between">
-                                                <div>
-                                                    <div className="flex justify-between items-start mb-3">
-                                                        <p className="font-bold text-lg">{delivery.clientName}</p>
-                                                        <Badge variant={getStatusVariant(delivery.status)} className="capitalize">{getStatusText(delivery.status)}</Badge>
-                                                    </div>
-                                                    <p className="text-gray-400 text-sm mb-1 flex items-center gap-2">
-                                                        <span className="material-symbols-outlined text-base">pin_drop</span>
-                                                        {delivery.destination}
-                                                    </p>
-                                                     <p className="text-gray-400 text-sm mb-4 flex items-center gap-2">
-                                                        <span className="material-symbols-outlined text-base">receipt_long</span>
-                                                        <span className="font-mono text-xs">#{delivery._id.substring(0, 12)}</span>
-                                                    </p>
+                    {/* Delivery List Column */}
+                    <div className="lg:col-span-1 h-full bg-uber-black rounded-lg overflow-y-auto">
+                         <div className="p-4 sticky top-0 bg-uber-black z-10">
+                            <h1 className="text-xl font-bold">Toutes les courses</h1>
+                         </div>
+                         <div className="px-4 pb-4">
+                             {loading ? (
+                                <div className="text-center text-gray-400 py-10">Chargement...</div>
+                            ) : filteredDeliveries.length > 0 ? (
+                                <div className="space-y-2">
+                                    {filteredDeliveries.map((delivery) => (
+                                        <button key={delivery._id} onClick={() => setSelectedDelivery(delivery)} className={`w-full text-left transition-all rounded-lg border-2 ${selectedDelivery?._id === delivery._id ? 'bg-uber-gray border-tiak-green' : 'border-transparent hover:bg-uber-gray'}`}>
+                                            <CardContent className="p-3">
+                                                <div className="flex justify-between items-start mb-2">
+                                                    <p className="font-semibold">{delivery.clientName}</p>
+                                                    <Badge variant={getStatusVariant(delivery.status)}>{getStatusText(delivery.status)}</Badge>
                                                 </div>
-                                                <div className="text-xs text-gray-500 mt-4 text-right">
-                                                   {new Date(delivery.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
-                                                </div>
+                                                <p className="text-gray-400 text-sm font-mono">#{delivery._id.substring(0, 8)}</p>
                                             </CardContent>
-                                        </Card>
-                                    </Link>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="text-center py-20 bg-uber-black rounded-2xl border border-uber-gray">
-                                <p className="text-gray-400 mb-4">Aucune livraison ne correspond à vos critères.</p>
-                                {deliveries.length === 0 && (
-                                    <Link to="/vendor/create-delivery" className="px-6 py-3 rounded-lg bg-tiak-green hover:bg-tiak-green-hover text-black font-bold transition-colors">
-                                        Créer votre première livraison
-                                    </Link>
-                                )}
-                            </div>
-                        )}
+                                        </button>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="text-center py-10">
+                                    <p className="text-gray-400">Aucune livraison trouvée.</p>
+                                </div>
+                            )}
+                         </div>
                     </div>
+
+                    {/* Delivery Details Column */}
+                    <div className="lg:col-span-2 h-full hidden lg:block rounded-lg">
+                        <DeliveryDetailsCard delivery={selectedDelivery} />
+                    </div>
+
                 </div>
             </main>
         </div>
