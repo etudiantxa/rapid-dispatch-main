@@ -20,7 +20,7 @@ const Login = () => {
         setLoading(true);
         try {
             const { data } = await axios.post('/api/auth/login', { email, password });
-            await login(data.token);
+            login(data.token, data.user); // Pass both token and user object
 
             toast({ title: "Connexion réussie", description: `Bienvenue, ${data.user.name}!` });
 
