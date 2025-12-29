@@ -18,42 +18,16 @@ app.use('/api/deliveries', deliveryRoutes);
 app.use('/api/batches', batchRoutes);
 
 const PORT = process.env.PORT || 5000;
-const MONGODB_URI = process.env.MONGODB_URI;
+const MONGO_URI = process.env.MONGO_URI;
 
-if (!MONGODB_URI) {
-  throw new Error('MONGODB_URI is not defined in the environment variables');
+if (!MONGO_URI) {
+  throw new Error('MONGO_URI is not defined in the environment variables');
 }
 if (!process.env.JWT_SECRET) {
   throw new Error('JWT_SECRET is not defined in the environment variables');
 }
 
-app.get('/', (req, res) => {
-  res.send('Server is running');
-});
-
-app.use('/api/auth', authRoutes);
-app.use('/api/deliveries', deliveryRoutes);
-app.use('/api/batches', batchRoutes);
-// Options de connexion MongoDB
-const mongooseOptions = {
-  serverSelectionTimeoutMS: 30000, // 30s timeout
-  retryWrites: true,
-};
-
-// Connexion à MongoDB
-mongoose.connect(MONGODB_URI, mongooseOptions)
-  .then(() => {
-    console.log('✅ Connecté à MongoDB');
-    // Démarrer le serveur seulement après connexion réussie
-    app.listen(PORT, () => {
-      console.log(`🚀 Server is running on port ${PORT}`);
-    });
-  })
-  .catch(err => {
-    console.error('❌ Erreur de connexion MongoDB:', err.message);
-    process.exit(1);
-  });
-
-mongoose.connection.on('error', (err) => {
-  console.error('MongoDB connection error:', err);
-});
+mongoose
+  .connect(MONGO_URI)
+  .then(() => app.listen(PORT, () => console.log(`Server running on port: ${PORT}`)))
+  .catch((error) => console.log(error.message));

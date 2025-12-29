@@ -1,56 +1,82 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { UserProvider, useUser } from './context/UserContext';
+import { NotificationProvider } from './context/NotificationContext';
+import { Toaster } from './components/ui/toaster';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-// Auth Pages
-import Login from "./pages/auth/Login";
-import Register from "./pages/auth/Register";
-
+// Pages
+import Login from './pages/Login';
+import Register from './pages/Register';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 // Vendor Pages
-import Tracking from "./pages/vendor/Tracking";
-import CreateDelivery from "./pages/vendor/CreateDelivery";
-
+import VendorDashboard from './pages/vendor/Dashboard';
+import CreateDelivery from './pages/vendor/CreateDelivery';
+import VendorTracking from './pages/vendor/Tracking';
 // Courier Pages
-import CourierHome from "./pages/courier/Home";
-import BatchDetails from "./pages/courier/BatchDetails";
-import DeliveryInProgress from "./pages/courier/DeliveryInProgress";
-import OTPValidation from "./pages/courier/OTPValidation";
+import CourierDashboard from './pages/courier/Dashboard';
+import CourierDeliveries from './pages/courier/Deliveries';
 
-import NotFound from "./pages/NotFound";
-
+// Create a client
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-        <Routes>
-          {/* Redirect root to login */}
-          <Route path="/" element={<Navigate to="/login" replace />} />
-          
-          {/* Auth Routes */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          
-          {/* Vendor Routes */}
-          <Route path="/vendor/dashboard" element={<Tracking />} />
-          <Route path="/vendor/tracking" element={<Tracking />} />
-          <Route path="/vendor/create-delivery" element={<CreateDelivery />} />
-          
-          {/* Courier Routes */}
-          <Route path="/courier/home" element={<CourierHome />} />
-          <Route path="/courier/batch/:batchId" element={<BatchDetails />} />
-          <Route path="/courier/delivery-in-progress" element={<DeliveryInProgress />} />
-          <Route path="/courier/otp-validation" element={<OTPValidation />} />
-          
-          {/* Catch-all */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+interface PrivateRouteProps {
+  children: React.ReactElement;
+  roles: string[];
+}
+
+const PrivateRoute = ({ children, roles }: PrivateRouteProps) => {
+  const { user, loading } = useUser();
+
+  if (loading) {
+    return <div className="bg-uber-dark-gray text-white h-screen flex items-center justify-center">Chargement...</div>;
+  }
+
+  if (!user) {
+    return <Navigate to="/login" />;
+  }
+
+  if (!roles.includes(user.role)) {
+    // Redirect if user role is not allowed
+    return <Navigate to={user.role === 'vendor' ? '/vendor/dashboard' : '/courier/dashboard'} />;
+  }
+
+  return children;
+};
+
+
+const App = () => {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <UserProvider>
+        <NotificationProvider>
+          <Router>
+            <Routes>
+              {/* Auth */}
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password/:token" element={<ResetPassword />} />
+
+              {/* Vendor Routes */}
+              <Route path="/vendor/dashboard" element={<PrivateRoute roles={['vendor']}><VendorDashboard /></PrivateRoute>} />
+              <Route path="/vendor/create-delivery" element={<PrivateRoute roles={['vendor']}><CreateDelivery /></PrivateRoute>} />
+              <Route path="/vendor/tracking" element={<PrivateRoute roles={['vendor']}><VendorTracking /></PrivateRoute>} />
+
+              {/* Courier Routes */}
+               <Route path="/courier/dashboard" element={<PrivateRoute roles={['courier']}><CourierDashboard /></PrivateRoute>} />
+               <Route path="/courier/deliveries" element={<PrivateRoute roles={['courier']}><CourierDeliveries /></PrivateRoute>} />
+
+
+              {/* Redirect root */}
+              <Route path="/" element={<Navigate to="/login" />} />
+            </Routes>
+          </Router>
+          <Toaster />
+        </NotificationProvider>
+      </UserProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;

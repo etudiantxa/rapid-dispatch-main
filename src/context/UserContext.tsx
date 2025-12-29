@@ -12,7 +12,7 @@ interface User {
 interface UserContextType {
   user: User | null;
   loading: boolean;
-  login: (token: string) => Promise<void>;
+  login: (token: string, user: User) => void;
   logout: () => void;
 }
 
@@ -23,34 +23,31 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  const fetchUser = async () => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      try {
-        setLoading(true);
-        const { data: userData } = await axios.get('/api/auth/me', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setUser(userData);
-      } catch (error) {
-        console.error("Failed to fetch user, token might be invalid.", error);
-        localStorage.removeItem('token');
-        setUser(null);
-      } finally {
-        setLoading(false);
-      }
-    } else {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
+    const fetchUser = async () => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          // No need to setLoading(true) here, to avoid layout shift on reload
+          const { data: userData } = await axios.get('/api/auth/me', {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          setUser(userData);
+        } catch (error) {
+          console.error("Failed to fetch user, token might be invalid.", error);
+          localStorage.removeItem('token');
+          setUser(null);
+        }
+      }
+      setLoading(false);
+    };
+
     fetchUser();
   }, []);
 
-  const login = async (token: string) => {
+  const login = (token: string, userData: User) => {
     localStorage.setItem('token', token);
-    await fetchUser();
+    setUser(userData);
   };
 
   const logout = () => {
@@ -61,7 +58,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <UserContext.Provider value={{ user, loading, login, logout }}>
-      {children}
+      {!loading && children}
     </UserContext.Provider>
   );
 };

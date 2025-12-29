@@ -1,4 +1,3 @@
-// Refreshing the PR to fix the merge button visibility.
 import {
   Popover,
   PopoverContent,
@@ -14,7 +13,6 @@ const NotificationPopover = () => {
 
   return (
     <Popover onOpenChange={(open) => {
-      // Mark as read when the popover is opened
       if (open && unreadCount > 0) {
         markAllAsRead();
       }
