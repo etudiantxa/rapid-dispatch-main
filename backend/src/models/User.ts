@@ -1,4 +1,4 @@
-import { Schema, model, Document, HookNextFunction } from 'mongoose';
+import { Schema, model, Document } from 'mongoose';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 
@@ -28,7 +28,7 @@ const userSchema = new Schema<IUser>({
 });
 
 // Pre-save middleware to hash password
-userSchema.pre<IUser>('save', async function (next: HookNextFunction) {
+userSchema.pre<IUser>('save', async function (next: import('mongoose').PreSaveMiddlewareFunction<IUser>) {
   // Only run this function if password was actually modified
   if (!this.isModified('password') || !this.password) return next();
 

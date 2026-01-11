@@ -1,12 +1,11 @@
+import dotenv from 'dotenv';
+dotenv.config();
 import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import authRoutes from './routes/auth';
 import deliveryRoutes from './routes/deliveries';
 import batchRoutes from './routes/batches';
-
-dotenv.config();
 
 const app = express();
 
