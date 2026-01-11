@@ -1,6 +1,5 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { UserProvider, useUser } from './context/UserContext';
-import { NotificationProvider } from './context/NotificationContext';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { useUser } from './context/UserContext';
 import { Toaster } from './components/ui/toaster';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -48,33 +47,27 @@ const PrivateRoute = ({ children, roles }: PrivateRouteProps) => {
 const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
-      <UserProvider>
-        <NotificationProvider>
-          <Router>
-            <Routes>
-              {/* Auth */}
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
-              <Route path="/reset-password/:token" element={<ResetPassword />} />
+      <Routes>
+        {/* Auth */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
 
-              {/* Vendor Routes */}
-              <Route path="/vendor/dashboard" element={<PrivateRoute roles={['vendor']}><VendorDashboard /></PrivateRoute>} />
-              <Route path="/vendor/create-delivery" element={<PrivateRoute roles={['vendor']}><CreateDelivery /></PrivateRoute>} />
-              <Route path="/vendor/tracking" element={<PrivateRoute roles={['vendor']}><VendorTracking /></PrivateRoute>} />
+        {/* Vendor Routes */}
+        <Route path="/vendor/dashboard" element={<PrivateRoute roles={['vendor']}><VendorDashboard /></PrivateRoute>} />
+        <Route path="/vendor/create-delivery" element={<PrivateRoute roles={['vendor']}><CreateDelivery /></PrivateRoute>} />
+        <Route path="/vendor/tracking" element={<PrivateRoute roles={['vendor']}><VendorTracking /></PrivateRoute>} />
 
-              {/* Courier Routes */}
-               <Route path="/courier/dashboard" element={<PrivateRoute roles={['courier']}><CourierDashboard /></PrivateRoute>} />
-               <Route path="/courier/deliveries" element={<PrivateRoute roles={['courier']}><CourierDeliveries /></PrivateRoute>} />
+        {/* Courier Routes */}
+          <Route path="/courier/dashboard" element={<PrivateRoute roles={['courier']}><CourierDashboard /></PrivateRoute>} />
+          <Route path="/courier/deliveries" element={<PrivateRoute roles={['courier']}><CourierDeliveries /></PrivateRoute>} />
 
 
-              {/* Redirect root */}
-              <Route path="/" element={<Navigate to="/login" />} />
-            </Routes>
-          </Router>
-          <Toaster />
-        </NotificationProvider>
-      </UserProvider>
+        {/* Redirect root */}
+        <Route path="/" element={<Navigate to="/login" />} />
+      </Routes>
+      <Toaster />
     </QueryClientProvider>
   );
 };
