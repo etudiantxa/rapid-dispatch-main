@@ -28,7 +28,7 @@ const userSchema = new Schema<IUser>({
 });
 
 // Pre-save middleware to hash password
-userSchema.pre<IUser>('save', async function (next: import('mongoose').PreSaveMiddlewareFunction<IUser>) {
+userSchema.pre<IUser>('save', async function (next) {
   // Only run this function if password was actually modified
   if (!this.isModified('password') || !this.password) return next();
 
